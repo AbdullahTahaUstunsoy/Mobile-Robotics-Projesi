@@ -1,0 +1,108 @@
+<?xml version="1.0"?>
+<!--
+  Greenhouse robot: 4-wheel skid-steer base, no sensors (teleop only).
+  Frames follow REP-103 (x forward, y left, z up).
+-->
+<robot name="greenhouse_bot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:include filename="$(find midterm_description)/urdf/inertial_macros.xacro"/>
+
+  <!-- Chassis -->
+  <xacro:property name="chassis_length" value="0.55"/>
+  <xacro:property name="chassis_width" value="0.25"/>
+  <xacro:property name="chassis_height" value="0.15"/>
+  <xacro:property name="chassis_z" value="0.04"/>
+  <xacro:property name="chassis_mass" value="8.0"/>
+
+  <!-- Wheels -->
+  <xacro:property name="wheel_radius" value="0.075"/>
+  <xacro:property name="wheel_width" value="0.05"/>
+  <xacro:property name="wheel_mass" value="0.5"/>
+  <xacro:property name="wheel_x" value="0.18"/>
+  <xacro:property name="wheel_y" value="0.15"/>
+  <xacro:property name="wheel_mu_lateral" value="0.3"/>
+  <xacro:property name="wheel_separation_effective" value="0.35"/>
+
+  <material name="leaf_green"><color rgba="0.20 0.55 0.25 1.0"/></material>
+  <material name="dark_grey"><color rgba="0.15 0.15 0.15 1.0"/></material>
+  <material name="cream"><color rgba="0.90 0.88 0.80 1.0"/></material>
+
+  <!-- Base frames -->
+  <link name="base_footprint"/>
+
+  <link name="base_link"/>
+
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 ${wheel_radius}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Chassis -->
+  <link name="chassis">
+    <visual>
+      <geometry><box size="${chassis_length} ${chassis_width} ${chassis_height}"/></geometry>
+      <material name="leaf_green"/>
+    </visual>
+    <!-- Cream top plate -->
+    <visual>
+      <origin xyz="0 0 ${chassis_height/2 + 0.005}" rpy="0 0 0"/>
+      <geometry><box size="${chassis_length - 0.04} ${chassis_width - 0.02} 0.01"/></geometry>
+      <material name="cream"/>
+    </visual>
+    <collision>
+      <geometry><box size="${chassis_length} ${chassis_width} ${chassis_height}"/></geometry>
+    </collision>
+    <xacro:box_inertia m="${chassis_mass}" x="${chassis_length}" y="${chassis_width}" z="${chassis_height}">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </xacro:box_inertia>
+  </link>
+
+  <joint name="chassis_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="chassis"/>
+    <origin xyz="0 0 ${chassis_z}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Wheel macro: prefix e.g. front_left, x/y signs place it on the chassis -->
+  <xacro:macro name="wheel" params="prefix x_sign y_sign">
+    <link name="${prefix}_wheel">
+      <visual>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        <geometry><cylinder radius="${wheel_radius}" length="${wheel_width}"/></geometry>
+        <material name="dark_grey"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        <geometry><cylinder radius="${wheel_radius}" length="${wheel_width}"/></geometry>
+      </collision>
+      <xacro:cylinder_inertia m="${wheel_mass}" r="${wheel_radius}" h="${wheel_width}">
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+      </xacro:cylinder_inertia>
+    </link>
+
+    <joint name="${prefix}_wheel_joint" type="continuous">
+      <parent link="base_link"/>
+      <child link="${prefix}_wheel"/>
+      <origin xyz="${x_sign * wheel_x} ${y_sign * wheel_y} 0" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
+    </joint>
+
+    <!-- Skid-steer friction: fdir1 = wheel axle (collision z after the roll above).
+         mu1 acts along the axle (lateral, low so the base can turn in place),
+         mu2 acts in the rolling direction (high for traction). -->
+    <gazebo reference="${prefix}_wheel">
+      <mu1>${wheel_mu_lateral}</mu1>
+      <mu2>1.0</mu2>
+      <fdir1>0 0 1</fdir1>
+    </gazebo>
+  </xacro:macro>
+
+  <xacro:wheel prefix="front_left" x_sign="1" y_sign="1"/>
+  <xacro:wheel prefix="front_right" x_sign="1" y_sign="-1"/>
+  <xacro:wheel prefix="rear_left" x_sign="-1" y_sign="1"/>
+  <xacro:wheel prefix="rear_right" x_sign="-1" y_sign="-1"/>
+
+  <xacro:include filename="$(find midterm_description)/urdf/gazebo.xacro"/>
+
+</robot>

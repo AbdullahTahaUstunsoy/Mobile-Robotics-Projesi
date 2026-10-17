@@ -1,0 +1,22 @@
+# colcon
+build/
+install/
+log/
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Generated
+frames*.pdf
+frames*.gv
+
+# Claude Code local settings
+.claude/
