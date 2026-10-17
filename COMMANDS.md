@@ -1,63 +1,63 @@
-# Komutlar
+# Commands
 
-Projeyi derlemek, çalıştırmak, test etmek ve hata ayıklamak için sık kullanılan komutlar.
-Tüm komutlar workspace kökünden çalıştırılır:
+Frequently used commands for building, running, testing and debugging the project.
+All commands are run from the workspace root:
 
 ```bash
 cd "/home/samsapulee/Desktop/School/Mobile Robotics/Mobile-Robotics-Projesi"
 ```
 
-> Klasör yolunda boşluk var (`Mobile Robotics`): yolu her zaman tırnak içinde yaz.
+> The folder path contains a space (`Mobile Robotics`): always quote it.
 
-## 0. Klonlama ve kurulum
+## 0. Clone and setup
 
 ```bash
 git clone https://github.com/AbdullahTahaUstunsoy/Mobile-Robotics-Projesi.git ~/Mobile-Robotics-Projesi
 cd ~/Mobile-Robotics-Projesi
 sudo apt install -y python3-colcon-common-extensions ros-lyrical-ros-gz-sim ros-lyrical-ros-gz-bridge \
   ros-lyrical-robot-state-publisher ros-lyrical-xacro
-rosdep update && rosdep install --from-paths src --ignore-src -r -y   # eksik bağımlılıklar
+rosdep update && rosdep install --from-paths src --ignore-src -r -y   # missing dependencies
 ```
 
-Ayrıntılar ve private repo erişimi için `README.md` → *Kurulum*.
+Details and private repo access: `README.md` → *Setup*.
 
-## 1. Derleme
+## 1. Build
 
 ```bash
-source /opt/ros/lyrical/setup.bash              # ROS 2 (bashrc'de yoksa)
-colcon build --symlink-install                  # tüm paketler
-colcon build --symlink-install --packages-select midterm_behavior   # tek paket
-source install/setup.bash                       # her yeni terminalde bir kez
+source /opt/ros/lyrical/setup.bash              # ROS 2 (if not in .bashrc)
+colcon build --symlink-install                  # all packages
+colcon build --symlink-install --packages-select midterm_behavior   # a single package
+source install/setup.bash                       # once in every new terminal
 ```
 
-- `--symlink-install` ile Python, launch, xacro, world ve yaml değişiklikleri **yeniden derlemeden** geçerli olur.
-  Yeni dosya, yeni node (`setup.py` entry point) veya `CMakeLists.txt` / `package.xml` değişikliğinde tekrar derle.
-- `Package 'midterm_bringup' not found` → o terminalde `source install/setup.bash` yapılmamış.
-- Temiz derleme: `rm -rf build install log && colcon build --symlink-install`
+- With `--symlink-install`, changes to Python, launch, xacro, world and yaml files take effect **without rebuilding**.
+  Rebuild after adding a new file, a new node (`setup.py` entry point) or changing `CMakeLists.txt` / `package.xml`.
+- `Package 'midterm_bringup' not found` → `source install/setup.bash` was not run in that terminal.
+- Clean build: `rm -rf build install log && colcon build --symlink-install`
 
-## 2. Simülasyon
+## 2. Simulation
 
 ```bash
-ros2 launch midterm_bringup sim.launch.py       # Gazebo + robot + bridge
+ros2 launch midterm_bringup sim.launch.py       # Gazebo + robot + bridge + color_detector
 ```
 
-| Argüman | Varsayılan | Açıklama |
-|---------|------------|----------|
-| `headless` | `false` | Gazebo GUI'siz (sadece sunucu) |
-| `x`, `y`, `yaw` | `-0.5`, `0.65`, `0.0` | Robotun başlangıç konumu (1. koridor, orta sıra sağda) |
-| `world` | `greenhouse.sdf` | Dünya dosyası |
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `headless` | `false` | Gazebo without GUI (server only) |
+| `x`, `y`, `yaw` | `-0.5`, `0.65`, `0.0` | Robot start pose (aisle 1, middle row on the right) |
+| `world` | `greenhouse.sdf` | World file |
 
-Sadece dünyayı açmak için: `gz sim -r src/midterm_bringup/worlds/greenhouse.sdf`
+To open only the world: `gz sim -r src/midterm_bringup/worlds/greenhouse.sdf`
 
-## 3. Robotu sürmek
+## 3. Driving the robot
 
 ```bash
-ros2 run midterm_behavior wasd_teleop          # w/a/s/d basılı tut, q/e yay, PgUp/PgDn hız, boşluk dur
+ros2 run midterm_behavior wasd_teleop          # hold w/a/s/d, q/e arc, PgUp/PgDn speed, space stop
 ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.3}}"
-ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "{}"                 # dur
+ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "{}"                 # stop
 ```
 
-Yayınlanan topic'ler: `/cmd_vel`, `/odom`, `/tf`, `/tf_static`, `/joint_states`, `/clock`, `/robot_description`,
+Published topics: `/cmd_vel`, `/odom`, `/tf`, `/tf_static`, `/joint_states`, `/clock`, `/robot_description`,
 `/camera/image_raw`, `/camera/camera_info`, `/color_detector/{red_apple,green_apple,red_checkpoint,green_checkpoint,debug_image}`.
 
 ```bash
@@ -65,65 +65,66 @@ ros2 topic list
 ros2 topic echo /odom --once
 ```
 
-## 3b. Kamera ve renk tespiti
+## 3b. Camera and color detection
 
 ```bash
-ros2 run rqt_image_view rqt_image_view /color_detector/debug_image   # tespitler + maske
-ros2 run rqt_image_view rqt_image_view /camera/image_raw             # ham görüntü
-ros2 topic echo /color_detector/red_apple                            # x: yatay ofset, z: alan oranı
+ros2 run rqt_image_view rqt_image_view /color_detector/debug_image   # detections + mask
+ros2 run rqt_image_view rqt_image_view /camera/image_raw             # raw image
+ros2 topic echo /color_detector/red_apple                            # x: horizontal offset, z: area ratio
 ros2 topic hz /camera/image_raw                                      # ~15 Hz
-ros2 run midterm_behavior color_detector --ros-args -p green_sat_min:=140   # eşik ayarı (launch'takini kapatıp)
-python3 -m pytest -q src/midterm_behavior/test                       # birim testleri
+ros2 run midterm_behavior color_detector --ros-args -p green_sat_min:=140   # tune a threshold (thresholds are read at startup)
+python3 -m pytest -q src/midterm_behavior/test                       # unit tests
 ```
 
-## 4. Rapor için görseller
+## 4. Figures for the report
 
 ```bash
-ros2 run rqt_graph rqt_graph                          # node/topic grafiği
-ros2 run tf2_tools view_frames                        # TF ağacı → frames_*.pdf (gitignore'da)
-ros2 run tf2_ros tf2_echo odom base_footprint         # iki frame arası dönüşüm
+ros2 run rqt_graph rqt_graph                          # node/topic graph
+ros2 run tf2_tools view_frames                        # TF tree → frames_*.pdf (gitignored)
+ros2 run tf2_ros tf2_echo odom base_footprint         # transform between two frames
 ```
 
-## 5. Kontroller
+## 5. Checks
 
 ```bash
-# Xacro / URDF kontrolü
+# Xacro / URDF check
 xacro src/midterm_description/urdf/greenhouse_bot.urdf.xacro > /tmp/bot.urdf && check_urdf /tmp/bot.urdf
-gz sdf -k src/midterm_bringup/worlds/greenhouse.sdf   # dünya dosyası geçerli mi
+gz sdf -k src/midterm_bringup/worlds/greenhouse.sdf   # is the world file valid
 ```
 
-### Arayüzsüz simülasyon testi
+### Headless simulation test
 
-Açık bir simülasyonla karışmaması için farklı bir `ROS_DOMAIN_ID` kullan:
+Use a different `ROS_DOMAIN_ID` so it does not mix with an open simulation:
 
 ```bash
 export ROS_DOMAIN_ID=42
 ros2 launch midterm_bringup sim.launch.py headless:=true
-gz model -m greenhouse_bot -p        # Gazebo'daki gerçek konum (ground truth): x y z / roll pitch yaw
-gz topic -l                           # Gazebo tarafındaki topic'ler (bridge'den önce)
+gz model -m greenhouse_bot -p        # true pose in Gazebo (ground truth): x y z / roll pitch yaw
+gz topic -l                           # Gazebo-side topics (before the bridge)
 ```
 
-## 6. Sorun giderme
+## 6. Troubleshooting
 
 ```bash
-# Gazebo kapandı ama sunucu arkada kaldıysa (eski dünya açılıyor, simülasyon yavaş)
+# Gazebo closed but the server is still running (old world opens, simulation is slow)
 pgrep -af gz
 pkill -f gz-sim-main
 ```
 
-- `libEGL warning: ... dri2 screen` uyarıları headless çalışmada normal.
-- Robot hareket etmiyorsa: `ros2 topic info /cmd_vel` ile publisher var mı, `gz topic -e -t /cmd_vel` ile Gazebo'ya ulaşıyor mu kontrol et.
-- Teleop tuşlara tepki vermiyorsa: `wasd_teleop`'un çalıştığı terminal odakta olmalı.
+- `libEGL warning: ... dri2 screen` warnings are normal in headless runs.
+- Robot does not move: check that `/cmd_vel` has a publisher with `ros2 topic info /cmd_vel`, and that it reaches Gazebo with `gz topic -e -t /cmd_vel`.
+- Teleop does not react to keys: the terminal running `wasd_teleop` must be focused.
+- Nothing on `/color_detector/*`: check that `/camera/image_raw` is publishing (`ros2 topic hz`), then look at the mask inset in `debug_image`.
 
 ## 7. Git
 
 ```bash
 git status
 git pull --rebase
-git add -A && git commit -m "Kısa açıklama"
+git add -A && git commit -m "Short description"
 git push
 git log --oneline -10
 ```
 
 - Repo: https://github.com/AbdullahTahaUstunsoy/Mobile-Robotics-Projesi
-- `build/`, `install/`, `log/`, `frames*.pdf` gitignore'da.
+- `build/`, `install/`, `log/`, `frames*.pdf` are gitignored.

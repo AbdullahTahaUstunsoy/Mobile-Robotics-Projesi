@@ -1,30 +1,30 @@
 # Mobile-Robotics-Projesi
 
-Sera ortamında olgun meyve (elma) tespiti için Gazebo Sim dünyası ve klavyeyle (WASD) sürülen 4 tekerlekli robot. Robotta şu an RGB kamera var (kırmızı/yeşil elma ve RED/GREEN checkpoint tespiti); diğer sensörler ekleniyor.
+A Gazebo Sim greenhouse world for ripe fruit (apple) detection and a 4-wheel robot driven with the keyboard (WASD). The robot currently has an RGB camera (red/green apple and RED/GREEN checkpoint detection); the other sensors are being added.
 
-## Paketler
+## Packages
 
-| Paket | İçerik |
+| Package | Contents |
 | --- | --- |
 | `midterm_bringup` | `sim.launch.py`, `worlds/greenhouse.sdf`, `config/bridge.yaml` |
-| `midterm_description` | Robot modeli (`urdf/greenhouse_bot.urdf.xacro`): 4 tekerlekli skid-steer gövde, Gazebo DiffDrive eklentisi, `urdf/camera.xacro` |
-| `midterm_behavior` | `wasd_teleop`: klavyeden `/cmd_vel` yayınlayan teleop düğümü; `color_detector`: kamera görüntüsünde elma ve checkpoint tespiti |
+| `midterm_description` | Robot model (`urdf/greenhouse_bot.urdf.xacro`): 4-wheel skid-steer base, Gazebo DiffDrive plugin, `urdf/camera.xacro` |
+| `midterm_behavior` | `wasd_teleop`: teleop node that publishes `/cmd_vel` from the keyboard; `color_detector`: apple and checkpoint detection in the camera image |
 
-## Dünya: `src/midterm_bringup/worlds/greenhouse.sdf`
+## World: `src/midterm_bringup/worlds/greenhouse.sdf`
 
-- 3 saksı sırası (y = 1.4, 0.0, -1.4) ve aralarında 2 koridor
-- Orta sırada 9 meyve: 5 kırmızı (olgun), 4 yeşil (olgun değil)
-- Dört duvarla çevrili 11 x 5.4 m alan
-- Dış model kullanmıyor; tek dosya olarak çalışır
+- 3 planter rows (y = 1.4, 0.0, -1.4) with 2 aisles between them
+- 9 fruit on the middle row: 5 red (ripe), 4 green (unripe)
+- An 11 x 5.4 m area enclosed by four walls
+- No external models; runs as a single file
 
-## Kurulum
+## Setup
 
-### Gereksinimler
+### Requirements
 
-- Ubuntu + **ROS 2 Lyrical** (`/opt/ros/lyrical`) ve Gazebo Sim
+- Ubuntu + **ROS 2 Lyrical** (`/opt/ros/lyrical`) and Gazebo Sim
 - `ros_gz_sim`, `ros_gz_bridge`, `robot_state_publisher`, `xacro`, `colcon`
 
-ROS 2 kurulu bir sistemde eksik paketler:
+Missing packages on a system with ROS 2 installed:
 
 ~~~bash
 source /opt/ros/lyrical/setup.bash
@@ -34,26 +34,26 @@ sudo apt install -y git python3-colcon-common-extensions python3-rosdep \
   ros-lyrical-robot-state-publisher ros-lyrical-xacro
 ~~~
 
-### Repoyu klonlama
+### Cloning the repo
 
-Repo **private**: önce repo sahibinin sizi GitHub'da *Settings → Collaborators* bölümünden davet etmesi ve daveti kabul etmeniz gerekir.
+The repo is **private**: the owner first has to invite you on GitHub under *Settings → Collaborators*, and you have to accept the invitation.
 
 ~~~bash
 git clone https://github.com/AbdullahTahaUstunsoy/Mobile-Robotics-Projesi.git ~/Mobile-Robotics-Projesi
 cd ~/Mobile-Robotics-Projesi
 ~~~
 
-`build/`, `install/` ve `log/` klasörleri repoda boş gelir; içleri derleme sırasında dolar ve git'e gönderilmez.
+The `build/`, `install/` and `log/` folders come empty from the repo; they fill up during the build and their contents are not pushed to git.
 
-### Bağımlılıkları kontrol etme (isteğe bağlı)
+### Checking dependencies (optional)
 
 ~~~bash
-sudo rosdep init        # sadece ilk kez; "already exists" hatası verirse geçin
+sudo rosdep init        # first time only; skip it if it says "already exists"
 rosdep update
 rosdep install --from-paths src --ignore-src -r -y
 ~~~
 
-## Derleme
+## Build
 
 ~~~bash
 source /opt/ros/lyrical/setup.bash
@@ -61,66 +61,66 @@ colcon build --symlink-install
 source install/setup.bash
 ~~~
 
-Her yeni terminalde `source /opt/ros/lyrical/setup.bash && source install/setup.bash` çalıştırın.
+Run `source /opt/ros/lyrical/setup.bash && source install/setup.bash` in every new terminal.
 
-## Çalıştırma
+## Run
 
-Terminal 1 — Gazebo, robot ve köprü:
+Terminal 1 — Gazebo, robot and bridge:
 
 ~~~bash
 ros2 launch midterm_bringup sim.launch.py
 ~~~
 
-Terminal 2 — klavyeyle sürüş (bu terminal odakta olmalı):
+Terminal 2 — keyboard driving (this terminal must be focused):
 
 ~~~bash
 source /opt/ros/lyrical/setup.bash && source install/setup.bash
 ros2 run midterm_behavior wasd_teleop
 ~~~
 
-| Tuş | Hareket |
+| Key | Motion |
 | --- | --- |
-| `w` / `s` | ileri / geri |
-| `a` / `d` | yerinde sola / sağa dön |
-| `q` / `e` | ileri + sola / sağa |
-| `PgUp` / `PgDn` | hızı %10 artır / azalt |
-| `space` | dur |
-| `Ctrl+C` | çık (robotu durdurur) |
+| `w` / `s` | forward / backward |
+| `a` / `d` | turn left / right in place |
+| `q` / `e` | forward + left / right |
+| `PgUp` / `PgDn` | speed up / down by 10% |
+| `space` | stop |
+| `Ctrl+C` | quit (stops the robot) |
 
-Tuşu basılı tutun; bırakınca robot durur.
+Hold the key down; the robot stops when you release it.
 
-## RGB kamera ve renk tespiti
+Launch arguments: `headless:=true` (no Gazebo GUI), `x`, `y`, `yaw` (start pose, default aisle 1: `-0.5`, `0.65`, `0.0`), `world` (a different world file).
 
-Kamera gövdenin önünde, yerden ~0.40 m yükseklikte, **ileri** bakıyor (640×480, 15 Hz, 90° yatay görüş).
-Böylece koridor boyunca iki yandaki sıralardaki elmaları ve ilerideki duvar checkpoint'lerini görüyor.
-Yönü `urdf/camera.xacro` içindeki `camera_yaw` ile değiştirilebilir (`-pi/2` = sağa bakar).
+To open only the world: `gz sim -r src/midterm_bringup/worlds/greenhouse.sdf`
 
-`color_detector` düğümü `sim.launch.py` ile otomatik başlar. HSV maskeleriyle **renk** (kırmızı / yeşil),
-kontur şekliyle **tür** ayrılır: yuvarlak leke = elma, 4 köşeli dışbükey leke (dikdörtgen / açılı bakınca yamuk) = checkpoint paneli.
-Yapraklar (S ≈ 110) ve kahverengi saksılar (S ≈ 95) doygunluk eşiğiyle elenir.
+## RGB camera and color detection
 
-| Topic | Tip | Açıklama |
+The camera sits at the front of the chassis, ~0.40 m above the ground, facing **forward** (640×480, 15 Hz, 90° horizontal field of view).
+Driving along an aisle it sees the apples on the rows on both sides and the wall checkpoints ahead.
+Its direction can be changed with `camera_yaw` in `urdf/camera.xacro` (`-pi/2` = looks right).
+
+The `color_detector` node starts automatically with `sim.launch.py`. HSV masks separate the **color** (red / green)
+and the contour shape separates the **kind**: a round blob = apple, a 4-corner convex blob (a rectangle, or a trapezoid when seen at an angle) = checkpoint panel.
+Foliage (S ≈ 110) and brown planters (S ≈ 95) are rejected by the saturation threshold.
+
+| Topic | Type | Description |
 | --- | --- | --- |
-| `/camera/image_raw`, `/camera/camera_info` | `sensor_msgs/Image`, `CameraInfo` | Ham kamera görüntüsü |
-| `/color_detector/red_apple` | `geometry_msgs/PointStamped` | Kırmızı (olgun) elma |
-| `/color_detector/green_apple` | `geometry_msgs/PointStamped` | Yeşil (olgun değil) elma |
-| `/color_detector/red_checkpoint` | `geometry_msgs/PointStamped` | Duvardaki RED panel |
-| `/color_detector/green_checkpoint` | `geometry_msgs/PointStamped` | Duvardaki GREEN panel |
-| `/color_detector/debug_image` | `sensor_msgs/Image` | Tespitler çizilmiş görüntü + sağ üstte maske |
+| `/camera/image_raw`, `/camera/camera_info` | `sensor_msgs/Image`, `CameraInfo` | Raw camera image |
+| `/color_detector/red_apple` | `geometry_msgs/PointStamped` | Red (ripe) apple |
+| `/color_detector/green_apple` | `geometry_msgs/PointStamped` | Green (unripe) apple |
+| `/color_detector/red_checkpoint` | `geometry_msgs/PointStamped` | RED panel on a wall |
+| `/color_detector/green_checkpoint` | `geometry_msgs/PointStamped` | GREEN panel on a wall |
+| `/color_detector/debug_image` | `sensor_msgs/Image` | Image with the detections drawn + mask in the top-right corner |
 
-`PointStamped` mesajları yalnızca nesne görüldüğü sürece yayınlanır (her etikette en büyük leke):
-`point.x` = görüntü merkezine yatay uzaklık (−1 sol … +1 sağ), `point.y` = dikey (−1 üst … +1 alt),
-`point.z` = nesnenin kapladığı görüntü oranı (yaklaştıkça büyür). Navigasyon tarafı, örneğin ~0.5 s mesaj gelmezse "görünmüyor" kabul edebilir.
+`PointStamped` messages are published only while the object is seen (the largest blob for each label):
+`point.x` = horizontal offset from the image center (−1 left … +1 right), `point.y` = vertical (−1 top … +1 bottom),
+`point.z` = fraction of the image covered by the object (grows as the robot gets closer). The navigation side can, for example, treat the object as "not seen" if no message arrives for ~0.5 s.
 
-Checkpoint panelleri için öneri: duvara yapışık ince kutu (ör. 0.02 × 0.4 × 0.3 m, merkez z ≈ 0.45 m),
-renkler `0.9 0.05 0.05` (kırmızı) ve `0.05 0.8 0.1` (yeşil). Bu değerlerle test edildi.
+Suggested checkpoint panels: a thin box against the wall (e.g. 0.02 × 0.4 × 0.3 m, center at z ≈ 0.45 m),
+colors `0.9 0.05 0.05` (red) and `0.05 0.8 0.1` (green). Detection was tested with these values.
 
 ~~~bash
 ros2 run rqt_image_view rqt_image_view /color_detector/debug_image
 ros2 topic echo /color_detector/red_apple
-colcon test --packages-select midterm_behavior && colcon test-result --verbose   # birim testleri
+colcon test --packages-select midterm_behavior && colcon test-result --verbose   # unit tests
 ~~~
-
-Launch argümanları: `headless:=true` (Gazebo arayüzü olmadan), `x`, `y`, `yaw` (başlangıç konumu, varsayılan 1. koridor: `-0.5`, `0.65`, `0.0`), `world` (farklı bir dünya dosyası).
-
-Sadece dünyayı açmak için: `gz sim -r src/midterm_bringup/worlds/greenhouse.sdf`
