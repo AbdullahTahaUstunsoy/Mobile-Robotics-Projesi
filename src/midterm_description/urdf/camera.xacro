@@ -1,15 +1,15 @@
 <?xml version="1.0"?>
 <!--
-  RGB camera on a short mast at the front of the chassis, ~0.40 m above ground (fruit height).
-  Facing forward it sees the wall checkpoints ahead and the fruit on the rows beside the aisle;
-  set camera_yaw to -pi/2 to look at the right-hand row instead.
+  RGB camera on a mast at the right edge of the chassis, looking right (-y) at the plant row,
+  ~0.40 m above ground (fruit height). Robot center is ~0.45 m from the row face, so the
+  camera sees a ~0.5 m wide x ~0.4 m tall patch of the row. Set camera_yaw to 0 to look forward.
   Data: /camera/image_raw (sensor_msgs/msg/Image), /camera/camera_info, frame camera_optical_link.
 -->
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-  <xacro:property name="camera_mast_x" value="0.22"/>
-  <xacro:property name="camera_mast_y" value="0.0"/>
-  <xacro:property name="camera_yaw" value="0.0"/>          <!-- 0 = forward, -pi/2 = right side -->
+  <xacro:property name="camera_mast_x" value="0.0"/>
+  <xacro:property name="camera_mast_y" value="-0.105"/>   <!-- on the right edge of the top plate -->
+  <xacro:property name="camera_yaw" value="${-pi/2}"/>     <!-- -pi/2 = right side, 0 = forward -->
   <xacro:property name="camera_z" value="0.325"/>          <!-- from base_link (+0.075 → 0.40 m above ground) -->
   <xacro:property name="camera_mast_radius" value="0.012"/>
   <xacro:property name="camera_mast_bottom" value="${chassis_z + chassis_height/2}"/>
@@ -76,8 +76,7 @@
       <visualize>true</visualize>
       <camera>
         <camera_info_topic>camera/camera_info</camera_info_topic>
-        <!-- 90° so fruit on the rows beside the aisle stays in view until it is close -->
-        <horizontal_fov>1.5708</horizontal_fov>
+        <horizontal_fov>1.3</horizontal_fov>
         <image>
           <width>640</width>
           <height>480</height>
@@ -85,7 +84,7 @@
         </image>
         <clip>
           <near>0.05</near>
-          <far>15.0</far>
+          <far>10.0</far>
         </clip>
         <noise>
           <type>gaussian</type>

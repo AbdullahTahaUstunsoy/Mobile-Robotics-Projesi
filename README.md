@@ -7,7 +7,7 @@ A Gazebo Sim greenhouse world for ripe fruit (apple) detection and a 4-wheel rob
 | Package | Contents |
 | --- | --- |
 | `midterm_bringup` | `sim.launch.py`, `worlds/greenhouse.sdf`, `config/bridge.yaml` |
-| `midterm_description` | Robot model (`urdf/greenhouse_bot.urdf.xacro`): 4-wheel skid-steer base, Gazebo DiffDrive plugin, `urdf/camera.xacro` |
+| `midterm_description` | Robot model (`urdf/greenhouse_bot.urdf.xacro`): 4-wheel skid-steer base, Gazebo DiffDrive plugin, `urdf/camera.xacro`; RViz config `rviz/greenhouse_bot.rviz` |
 | `midterm_behavior` | `wasd_teleop`: teleop node that publishes `/cmd_vel` from the keyboard; `color_detector`: apple and checkpoint detection in the camera image |
 
 ## World: `src/midterm_bringup/worlds/greenhouse.sdf`
@@ -65,7 +65,7 @@ Run `source /opt/ros/lyrical/setup.bash && source install/setup.bash` in every n
 
 ## Run
 
-Terminal 1 — Gazebo, robot and bridge:
+Terminal 1 — Gazebo, robot, bridge, color detector and RViz:
 
 ~~~bash
 ros2 launch midterm_bringup sim.launch.py
@@ -89,15 +89,17 @@ ros2 run midterm_behavior wasd_teleop
 
 Hold the key down; the robot stops when you release it.
 
-Launch arguments: `headless:=true` (no Gazebo GUI), `x`, `y`, `yaw` (start pose, default aisle 1: `-0.5`, `0.65`, `0.0`), `world` (a different world file).
+RViz shows the robot model, TF, odometry, the raw camera image and the color detection image.
+
+Launch arguments: `headless:=true` (no Gazebo GUI), `rviz:=false` (do not open RViz), `x`, `y`, `yaw` (start pose, default aisle 1: `-0.5`, `0.65`, `0.0`), `world` (a different world file).
 
 To open only the world: `gz sim -r src/midterm_bringup/worlds/greenhouse.sdf`
 
 ## RGB camera and color detection
 
-The camera sits at the front of the chassis, ~0.40 m above the ground, facing **forward** (640×480, 15 Hz, 90° horizontal field of view).
-Driving along an aisle it sees the apples on the rows on both sides and the wall checkpoints ahead.
-Its direction can be changed with `camera_yaw` in `urdf/camera.xacro` (`-pi/2` = looks right).
+The camera sits on a mast at the right edge of the chassis, ~0.40 m above the ground, facing **right** (640×480, 15 Hz, 1.3 rad horizontal field of view).
+Driving along an aisle it sees the apples on the row on the robot's right; a wall checkpoint is seen when the robot turns its right side to the wall.
+Its direction can be changed with `camera_yaw` in `urdf/camera.xacro` (`0` = looks forward).
 
 The `color_detector` node starts automatically with `sim.launch.py`. HSV masks separate the **color** (red / green)
 and the contour shape separates the **kind**: a round blob = apple, a 4-corner convex blob (a rectangle, or a trapezoid when seen at an angle) = checkpoint panel.

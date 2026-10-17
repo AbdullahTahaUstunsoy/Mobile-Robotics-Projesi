@@ -38,12 +38,13 @@ source install/setup.bash                       # once in every new terminal
 ## 2. Simulation
 
 ```bash
-ros2 launch midterm_bringup sim.launch.py       # Gazebo + robot + bridge + color_detector
+ros2 launch midterm_bringup sim.launch.py       # Gazebo + robot + bridge + color_detector + RViz
 ```
 
 | Argument | Default | Description |
 |----------|---------|-------------|
 | `headless` | `false` | Gazebo without GUI (server only) |
+| `rviz` | `true` | Open RViz (`src/midterm_description/rviz/greenhouse_bot.rviz`) |
 | `x`, `y`, `yaw` | `-0.5`, `0.65`, `0.0` | Robot start pose (aisle 1, middle row on the right) |
 | `world` | `greenhouse.sdf` | World file |
 
@@ -98,7 +99,7 @@ Use a different `ROS_DOMAIN_ID` so it does not mix with an open simulation:
 
 ```bash
 export ROS_DOMAIN_ID=42
-ros2 launch midterm_bringup sim.launch.py headless:=true
+ros2 launch midterm_bringup sim.launch.py headless:=true rviz:=false
 gz model -m greenhouse_bot -p        # true pose in Gazebo (ground truth): x y z / roll pitch yaw
 gz topic -l                           # Gazebo-side topics (before the bridge)
 ```

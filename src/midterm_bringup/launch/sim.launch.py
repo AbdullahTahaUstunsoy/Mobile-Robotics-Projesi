@@ -1,4 +1,4 @@
-"""Start the greenhouse world, spawn the robot, bridge topics and start the color detector.
+"""Start the greenhouse world, spawn the robot, bridge topics, start the color detector and open RViz.
 
 Drive it with WASD teleop in a second terminal:
     ros2 run midterm_behavior wasd_teleop
@@ -9,6 +9,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
@@ -22,6 +23,7 @@ def generate_launch_description():
 
     world = LaunchConfiguration('world')
     headless = LaunchConfiguration('headless')
+    rviz = LaunchConfiguration('rviz')
     x = LaunchConfiguration('x')
     y = LaunchConfiguration('y')
     yaw = LaunchConfiguration('yaw')
@@ -78,12 +80,22 @@ def generate_launch_description():
         output='screen',
     )
 
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        arguments=['-d', os.path.join(description_share, 'rviz', 'greenhouse_bot.rviz')],
+        parameters=[{'use_sim_time': True}],
+        condition=IfCondition(rviz),
+        output='screen',
+    )
+
     return LaunchDescription([
         DeclareLaunchArgument(
             'world', default_value=os.path.join(bringup_share, 'worlds', 'greenhouse.sdf'),
             description='Gazebo world file'),
         DeclareLaunchArgument(
             'headless', default_value='false', description='Run Gazebo server only (no GUI)'),
+        DeclareLaunchArgument('rviz', default_value='true', description='Open RViz'),
         # Start in aisle 1, heading +x, with the middle row on the right
         DeclareLaunchArgument('x', default_value='-0.5'),
         DeclareLaunchArgument('y', default_value='0.65'),
@@ -93,4 +105,5 @@ def generate_launch_description():
         spawn_robot,
         bridge,
         color_detector,
+        rviz_node,
     ])
