@@ -1,4 +1,4 @@
-"""Start the greenhouse world, spawn the robot and bridge drive topics.
+"""Start the greenhouse world, spawn the robot, bridge topics and start the color detector.
 
 Drive it with WASD teleop in a second terminal:
     ros2 run midterm_behavior wasd_teleop
@@ -71,6 +71,13 @@ def generate_launch_description():
         output='screen',
     )
 
+    color_detector = Node(
+        package='midterm_behavior',
+        executable='color_detector',
+        parameters=[{'use_sim_time': True}],
+        output='screen',
+    )
+
     return LaunchDescription([
         DeclareLaunchArgument(
             'world', default_value=os.path.join(bringup_share, 'worlds', 'greenhouse.sdf'),
@@ -85,4 +92,5 @@ def generate_launch_description():
         robot_state_publisher,
         spawn_robot,
         bridge,
+        color_detector,
     ])

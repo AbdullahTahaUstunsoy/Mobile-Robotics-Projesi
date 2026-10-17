@@ -105,4 +105,7 @@
 
   <xacro:include filename="$(find midterm_description)/urdf/gazebo.xacro"/>
 
+  <!-- Sensors -->
+  <xacro:include filename="$(find midterm_description)/urdf/camera.xacro"/>
+
 </robot>

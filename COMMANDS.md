@@ -57,11 +57,23 @@ ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.3}}"
 ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "{}"                 # dur
 ```
 
-Robotta sensör yok; yayınlanan topic'ler: `/cmd_vel`, `/odom`, `/tf`, `/tf_static`, `/joint_states`, `/clock`, `/robot_description`.
+Yayınlanan topic'ler: `/cmd_vel`, `/odom`, `/tf`, `/tf_static`, `/joint_states`, `/clock`, `/robot_description`,
+`/camera/image_raw`, `/camera/camera_info`, `/color_detector/{red_apple,green_apple,red_checkpoint,green_checkpoint,debug_image}`.
 
 ```bash
 ros2 topic list
 ros2 topic echo /odom --once
+```
+
+## 3b. Kamera ve renk tespiti
+
+```bash
+ros2 run rqt_image_view rqt_image_view /color_detector/debug_image   # tespitler + maske
+ros2 run rqt_image_view rqt_image_view /camera/image_raw             # ham görüntü
+ros2 topic echo /color_detector/red_apple                            # x: yatay ofset, z: alan oranı
+ros2 topic hz /camera/image_raw                                      # ~15 Hz
+ros2 run midterm_behavior color_detector --ros-args -p green_sat_min:=140   # eşik ayarı (launch'takini kapatıp)
+python3 -m pytest -q src/midterm_behavior/test                       # birim testleri
 ```
 
 ## 4. Rapor için görseller

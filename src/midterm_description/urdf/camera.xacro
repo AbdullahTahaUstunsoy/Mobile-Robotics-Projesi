@@ -1,0 +1,99 @@
+<?xml version="1.0"?>
+<!--
+  RGB camera on a short mast at the front of the chassis, ~0.40 m above ground (fruit height).
+  Facing forward it sees the wall checkpoints ahead and the fruit on the rows beside the aisle;
+  set camera_yaw to -pi/2 to look at the right-hand row instead.
+  Data: /camera/image_raw (sensor_msgs/msg/Image), /camera/camera_info, frame camera_optical_link.
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:property name="camera_mast_x" value="0.22"/>
+  <xacro:property name="camera_mast_y" value="0.0"/>
+  <xacro:property name="camera_yaw" value="0.0"/>          <!-- 0 = forward, -pi/2 = right side -->
+  <xacro:property name="camera_z" value="0.325"/>          <!-- from base_link (+0.075 → 0.40 m above ground) -->
+  <xacro:property name="camera_mast_radius" value="0.012"/>
+  <xacro:property name="camera_mast_bottom" value="${chassis_z + chassis_height/2}"/>
+  <xacro:property name="camera_mast_length" value="${camera_z - 0.015 - camera_mast_bottom}"/>
+
+  <link name="camera_mast">
+    <visual>
+      <geometry><cylinder radius="${camera_mast_radius}" length="${camera_mast_length}"/></geometry>
+      <material name="dark_grey"/>
+    </visual>
+    <xacro:cylinder_inertia m="0.03" r="${camera_mast_radius}" h="${camera_mast_length}">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </xacro:cylinder_inertia>
+  </link>
+
+  <joint name="camera_mast_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera_mast"/>
+    <origin xyz="${camera_mast_x} ${camera_mast_y} ${camera_mast_bottom + camera_mast_length/2}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- camera_link: x points where the camera looks -->
+  <link name="camera_link">
+    <visual>
+      <geometry><box size="0.03 0.08 0.03"/></geometry>
+      <material name="dark_grey"/>
+    </visual>
+    <!-- Lens -->
+    <visual>
+      <origin xyz="0.017 0 0" rpy="0 ${pi/2} 0"/>
+      <geometry><cylinder radius="0.01" length="0.005"/></geometry>
+      <material name="lens_blue"><color rgba="0.2 0.4 0.9 1.0"/></material>
+    </visual>
+    <collision>
+      <geometry><box size="0.03 0.08 0.03"/></geometry>
+    </collision>
+    <xacro:box_inertia m="0.1" x="0.03" y="0.08" z="0.03">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </xacro:box_inertia>
+  </link>
+
+  <joint name="camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera_link"/>
+    <origin xyz="${camera_mast_x + 0.015*cos(camera_yaw)} ${camera_mast_y + 0.015*sin(camera_yaw)} ${camera_z}"
+            rpy="0 0 ${camera_yaw}"/>
+  </joint>
+
+  <!-- Optical frame (REP-103): z forward, x right, y down. Images are stamped with this frame. -->
+  <link name="camera_optical_link"/>
+
+  <joint name="camera_optical_joint" type="fixed">
+    <parent link="camera_link"/>
+    <child link="camera_optical_link"/>
+    <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}"/>
+  </joint>
+
+  <gazebo reference="camera_link">
+    <sensor name="camera" type="camera">
+      <topic>camera/image</topic>
+      <gz_frame_id>camera_optical_link</gz_frame_id>
+      <update_rate>15</update_rate>
+      <always_on>true</always_on>
+      <visualize>true</visualize>
+      <camera>
+        <camera_info_topic>camera/camera_info</camera_info_topic>
+        <!-- 90° so fruit on the rows beside the aisle stays in view until it is close -->
+        <horizontal_fov>1.5708</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.05</near>
+          <far>15.0</far>
+        </clip>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.005</stddev>
+        </noise>
+      </camera>
+    </sensor>
+  </gazebo>
+
+</robot>
