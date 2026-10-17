@@ -9,6 +9,18 @@ cd "/home/samsapulee/Desktop/School/Mobile Robotics/Mobile-Robotics-Projesi"
 
 > Klasör yolunda boşluk var (`Mobile Robotics`): yolu her zaman tırnak içinde yaz.
 
+## 0. Klonlama ve kurulum
+
+```bash
+git clone https://github.com/AbdullahTahaUstunsoy/Mobile-Robotics-Projesi.git ~/Mobile-Robotics-Projesi
+cd ~/Mobile-Robotics-Projesi
+sudo apt install -y python3-colcon-common-extensions ros-lyrical-ros-gz-sim ros-lyrical-ros-gz-bridge \
+  ros-lyrical-robot-state-publisher ros-lyrical-xacro
+rosdep update && rosdep install --from-paths src --ignore-src -r -y   # eksik bağımlılıklar
+```
+
+Ayrıntılar ve private repo erişimi için `README.md` → *Kurulum*.
+
 ## 1. Derleme
 
 ```bash

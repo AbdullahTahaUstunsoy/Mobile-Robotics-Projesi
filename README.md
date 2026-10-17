@@ -17,6 +17,42 @@ Sera ortamında olgun meyve (elma) tespiti için Gazebo Sim dünyası ve klavyey
 - Dört duvarla çevrili 11 x 5.4 m alan
 - Dış model kullanmıyor; tek dosya olarak çalışır
 
+## Kurulum
+
+### Gereksinimler
+
+- Ubuntu + **ROS 2 Lyrical** (`/opt/ros/lyrical`) ve Gazebo Sim
+- `ros_gz_sim`, `ros_gz_bridge`, `robot_state_publisher`, `xacro`, `colcon`
+
+ROS 2 kurulu bir sistemde eksik paketler:
+
+~~~bash
+source /opt/ros/lyrical/setup.bash
+sudo apt update
+sudo apt install -y git python3-colcon-common-extensions python3-rosdep \
+  ros-lyrical-ros-gz-sim ros-lyrical-ros-gz-bridge \
+  ros-lyrical-robot-state-publisher ros-lyrical-xacro
+~~~
+
+### Repoyu klonlama
+
+Repo **private**: önce repo sahibinin sizi GitHub'da *Settings → Collaborators* bölümünden davet etmesi ve daveti kabul etmeniz gerekir.
+
+~~~bash
+git clone https://github.com/AbdullahTahaUstunsoy/Mobile-Robotics-Projesi.git ~/Mobile-Robotics-Projesi
+cd ~/Mobile-Robotics-Projesi
+~~~
+
+`build/`, `install/` ve `log/` klasörleri repoda boş gelir; içleri derleme sırasında dolar ve git'e gönderilmez.
+
+### Bağımlılıkları kontrol etme (isteğe bağlı)
+
+~~~bash
+sudo rosdep init        # sadece ilk kez; "already exists" hatası verirse geçin
+rosdep update
+rosdep install --from-paths src --ignore-src -r -y
+~~~
+
 ## Derleme
 
 ~~~bash
@@ -24,6 +60,8 @@ source /opt/ros/lyrical/setup.bash
 colcon build --symlink-install
 source install/setup.bash
 ~~~
+
+Her yeni terminalde `source /opt/ros/lyrical/setup.bash && source install/setup.bash` çalıştırın.
 
 ## Çalıştırma
 
