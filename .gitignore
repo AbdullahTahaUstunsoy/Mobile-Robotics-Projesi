@@ -1,7 +1,10 @@
-# colcon
-build/
-install/
-log/
+# colcon (folders are kept on GitHub via .gitkeep, their contents are not)
+build/*
+!build/.gitkeep
+install/*
+!install/.gitkeep
+log/*
+!log/.gitkeep
 
 # Python
 __pycache__/
