@@ -19,7 +19,7 @@ setup(
     entry_points={
         'console_scripts': [
             'wasd_teleop = midterm_behavior.wasd_teleop:main',
-            'color_detector = midterm_behavior.color_detector:main',
+            'color_detector = midterm_behavior.color_detector_node:main',
         ],
     },
 )
