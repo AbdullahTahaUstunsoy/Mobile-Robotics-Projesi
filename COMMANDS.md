@@ -38,7 +38,7 @@ source install/setup.bash                       # once in every new terminal
 ## 2. Simulation
 
 ```bash
-ros2 launch bringup sim.launch.py       # Gazebo + robot + bridge + color_detector + RViz
+ros2 launch bringup sim.launch.py       # Gazebo + robot + bridge + color_detector + obstacle_detector + RViz
 ```
 
 | Argument | Default | Description |
@@ -59,7 +59,8 @@ ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "{}"                 # st
 ```
 
 Published topics: `/cmd_vel`, `/odom`, `/tf`, `/tf_static`, `/joint_states`, `/clock`, `/robot_description`,
-`/camera/image_raw`, `/camera/camera_info`, `/color_detector/{red_apple,green_apple,red_checkpoint,green_checkpoint,debug_image}`.
+`/camera/image_raw`, `/camera/camera_info`, `/color_detector/{red_apple,green_apple,red_checkpoint,green_checkpoint,debug_image}`,
+`/scan`, `/obstacle_detector/{state,front_distance,markers}`.
 
 ```bash
 ros2 topic list
@@ -75,6 +76,15 @@ ros2 topic echo /color_detector/red_apple                            # x: horizo
 ros2 topic hz /camera/image_raw                                      # ~15 Hz
 ros2 run behavior color_detector --ros-args -p green_sat_min:=140   # tune a threshold (thresholds are read at startup)
 python3 -m pytest -q src/behavior/test                               # unit tests
+```
+
+## 3c. Lidar and obstacle detection
+
+```bash
+ros2 topic hz /scan                                                  # ~10 Hz
+ros2 topic echo /obstacle_detector/state                             # CLEAR / WARN / STOP
+ros2 topic echo /obstacle_detector/front_distance                    # nearest point ahead (m)
+ros2 run behavior obstacle_detector --ros-args -p stop_distance:=0.4 # tune a parameter (or edit config/obstacle_detector.yaml)
 ```
 
 ## 4. Figures for the report
@@ -115,6 +125,7 @@ pkill -f gz-sim-main
 - `libEGL warning: ... dri2 screen` warnings are normal in headless runs.
 - Robot does not move: check that `/cmd_vel` has a publisher with `ros2 topic info /cmd_vel`, and that it reaches Gazebo with `gz topic -e -t /cmd_vel`.
 - Teleop does not react to keys: the terminal running `wasd_teleop` must be focused.
+- Nothing on `/scan`: check that `lidar.xacro` is included in `greenhouse_bot.urdf.xacro` and that it shows in `gz topic -l`.
 - Nothing on `/color_detector/*`: check that `/camera/image_raw` is publishing (`ros2 topic hz`), then look at the mask inset in `debug_image`.
 
 ## 7. Git

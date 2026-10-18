@@ -1,14 +1,14 @@
 # Mobile-Robotics-Projesi
 
-A Gazebo Sim greenhouse world for ripe fruit (apple) detection and a 4-wheel robot driven with the keyboard (WASD). The robot currently has an RGB camera (red/green apple and RED/GREEN checkpoint detection); the other sensors are being added.
+A Gazebo Sim greenhouse world for ripe fruit (apple) detection and a 4-wheel robot driven with the keyboard (WASD). The robot currently has an RGB camera (red/green apple and RED/GREEN checkpoint detection) and a 2D lidar (obstacle detection); the other sensors are being added.
 
 ## Packages
 
 | Package | Contents |
 | --- | --- |
-| `bringup` | `sim.launch.py`, `worlds/greenhouse.sdf`, `config/bridge.yaml` |
-| `description` | Robot model (`urdf/greenhouse_bot.urdf.xacro`): 4-wheel skid-steer base, Gazebo DiffDrive plugin, `urdf/camera.xacro`; RViz config `rviz/greenhouse_bot.rviz` |
-| `behavior` | `wasd_teleop`: teleop node that publishes `/cmd_vel` from the keyboard; `color_detector`: apple and checkpoint detection in the camera image |
+| `bringup` | `sim.launch.py`, `worlds/greenhouse.sdf`, `config/bridge.yaml`, `config/obstacle_detector.yaml` |
+| `description` | Robot model (`urdf/greenhouse_bot.urdf.xacro`): 4-wheel skid-steer base, Gazebo DiffDrive plugin, `urdf/camera.xacro`, `urdf/lidar.xacro`; RViz config `rviz/greenhouse_bot.rviz` |
+| `behavior` | `wasd_teleop`: teleop node that publishes `/cmd_vel` from the keyboard; `color_detector`: apple and checkpoint detection in the camera image; `obstacle_detector`: obstacle detection in the lidar scan |
 
 ## World: `src/bringup/worlds/greenhouse.sdf`
 
@@ -65,7 +65,7 @@ Run `source /opt/ros/lyrical/setup.bash && source install/setup.bash` in every n
 
 ## Run
 
-Terminal 1 — Gazebo, robot, bridge, color detector and RViz:
+Terminal 1 — Gazebo, robot, bridge, color and obstacle detectors and RViz:
 
 ~~~bash
 ros2 launch bringup sim.launch.py
@@ -89,7 +89,7 @@ ros2 run behavior wasd_teleop
 
 Hold the key down; the robot stops when you release it.
 
-RViz shows the robot model, TF, odometry, the raw camera image and the color detection image.
+RViz shows the robot model, TF, odometry, the raw camera image, the color detection image, the lidar scan and the detected obstacles.
 
 Launch arguments: `headless:=true` (no Gazebo GUI), `rviz:=false` (do not open RViz), `x`, `y`, `yaw` (start pose, default aisle 1: `-0.5`, `0.65`, `0.0`), `world` (a different world file).
 
@@ -125,4 +125,27 @@ colors `0.9 0.05 0.05` (red) and `0.05 0.8 0.1` (green). Detection was tested wi
 ros2 run rqt_image_view rqt_image_view /color_detector/debug_image
 ros2 topic echo /color_detector/red_apple
 colcon test --packages-select behavior && colcon test-result --verbose   # unit tests
+~~~
+
+## Lidar and obstacle detection
+
+A 360° 2D lidar (`urdf/lidar.xacro`) sits at the front of the top plate, scan plane ~0.23 m above the ground
+(below the planter tops, so rows, walls and low obstacles are all seen). 360 rays, 0.12–8 m, 10 Hz, frame `lidar_link`.
+
+The `obstacle_detector` node starts automatically with `sim.launch.py`. It drops the points on the robot's own body,
+splits the scan into obstacles (clusters of neighbouring points) and checks the **corridor** straight ahead
+(the strip the robot will drive through, ±0.25 m): the nearest point inside it decides the state
+`STOP` (< 0.5 m), `WARN` (< 1.0 m) or `CLEAR`. Parameters are in `src/bringup/config/obstacle_detector.yaml`.
+
+| Topic | Type | Description |
+| --- | --- | --- |
+| `/scan` | `sensor_msgs/LaserScan` | Raw lidar scan |
+| `/obstacle_detector/state` | `std_msgs/String` | `CLEAR`, `WARN` or `STOP` for the corridor ahead |
+| `/obstacle_detector/front_distance` | `std_msgs/Float32` | Nearest point in the corridor (m), `inf` if none |
+| `/obstacle_detector/markers` | `visualization_msgs/MarkerArray` | RViz: corridor (green / orange / red by state), obstacles (red in the corridor, cyan outside) and their distances |
+
+~~~bash
+ros2 topic echo /obstacle_detector/state
+ros2 topic echo /obstacle_detector/front_distance
+python3 -m pytest -q src/behavior/test   # unit tests
 ~~~

@@ -1,4 +1,5 @@
-"""Start the greenhouse world, spawn the robot, bridge topics, start the color detector and open RViz.
+"""Start the greenhouse world, spawn the robot, bridge topics, start the color and obstacle detectors
+and open RViz.
 
 Drive it with WASD teleop in a second terminal:
     ros2 run behavior wasd_teleop
@@ -80,6 +81,16 @@ def generate_launch_description():
         output='screen',
     )
 
+    obstacle_detector = Node(
+        package='behavior',
+        executable='obstacle_detector',
+        parameters=[
+            os.path.join(bringup_share, 'config', 'obstacle_detector.yaml'),
+            {'use_sim_time': True},
+        ],
+        output='screen',
+    )
+
     rviz_node = Node(
         package='rviz2',
         executable='rviz2',
@@ -105,5 +116,6 @@ def generate_launch_description():
         spawn_robot,
         bridge,
         color_detector,
+        obstacle_detector,
         rviz_node,
     ])

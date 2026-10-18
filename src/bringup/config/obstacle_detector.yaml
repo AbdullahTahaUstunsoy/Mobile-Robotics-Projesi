@@ -1,0 +1,14 @@
+# Parameters of behavior/obstacle_detector_node.py (defaults: DetectorParams in obstacle_detection.py).
+# Distances in meters, in the lidar frame (x forward, y left).
+obstacle_detector:
+  ros__parameters:
+    corridor_half_width: 0.25   # robot half width (0.175 m) + margin
+    stop_distance: 0.5          # nearest point in the corridor closer than this -> STOP
+    warn_distance: 1.0          # ... closer than this -> WARN
+    cluster_gap: 0.2            # neighbouring points farther apart start a new obstacle
+    min_cluster_points: 3       # smaller clusters are treated as noise
+    # Robot footprint in the lidar frame (lidar is 0.2 m ahead of the chassis center)
+    footprint_min_x: -0.5
+    footprint_max_x: 0.1
+    footprint_half_width: 0.2
+    lidar_height: 0.225         # scan plane above the ground, for the RViz obstacle walls

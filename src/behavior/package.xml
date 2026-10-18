@@ -3,13 +3,15 @@
 <package format="3">
   <name>behavior</name>
   <version>0.0.1</version>
-  <description>WASD keyboard teleop that publishes motion commands on /cmd_vel.</description>
+  <description>WASD teleop, camera color detection and lidar obstacle detection nodes.</description>
   <maintainer email="TODO@example.com">TODO</maintainer>
   <license>MIT</license>
 
   <exec_depend>rclpy</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>visualization_msgs</exec_depend>
   <exec_depend>cv_bridge</exec_depend>
   <exec_depend>python3-opencv</exec_depend>
   <exec_depend>python3-numpy</exec_depend>
