@@ -20,7 +20,7 @@ from sensor_msgs.msg import LaserScan
 from std_msgs.msg import ColorRGBA, Float32, String
 from visualization_msgs.msg import Marker, MarkerArray
 
-from midterm_lidar.obstacle_detection import CLEAR, detect, DetectorParams, STOP, WARN
+from behavior.obstacle_detection import CLEAR, detect, DetectorParams, STOP, WARN
 
 STATE_COLORS = {
     CLEAR: ColorRGBA(r=0.1, g=0.8, b=0.2, a=0.25),

@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 
-from midterm_lidar.obstacle_detection import CLEAR, cluster, detect, STOP, WARN
+from behavior.obstacle_detection import CLEAR, cluster, detect, STOP, WARN
 
 # Same layout as the Gazebo lidar: 360 rays over -pi..pi
 N = 360

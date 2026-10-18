@@ -56,6 +56,29 @@ Visualization Manager:
         Reliability Policy: Reliable
       Normalize Range: true
       Value: true
+    - Class: rviz_default_plugins/LaserScan
+      Name: LaserScan
+      Enabled: true
+      Topic:
+        Value: /scan
+        Reliability Policy: Best Effort
+      Style: Spheres
+      Size (m): 0.04
+      Color Transformer: FlatColor
+      Color: 255; 255; 0
+      Decay Time: 0
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Name: Obstacles
+      Enabled: true
+      Topic:
+        Value: /obstacle_detector/markers
+      Namespaces:
+        corridor: true
+        obstacle: true
+        nearest: true
+        distance: true
+      Value: true
   Enabled: true
   Global Options:
     Fixed Frame: odom

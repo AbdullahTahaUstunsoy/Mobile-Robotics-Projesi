@@ -107,5 +107,6 @@
 
   <!-- Sensors -->
   <xacro:include filename="$(find description)/urdf/camera.xacro"/>
+  <xacro:include filename="$(find description)/urdf/lidar.xacro"/>
 
 </robot>

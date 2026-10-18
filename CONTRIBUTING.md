@@ -111,14 +111,17 @@ src/
 │   │   ├── gazebo.xacro                # robot-wide gz plugins (DiffDrive, joint states)
 │   │   ├── inertial_macros.xacro       # shared inertia macros
 │   │   ├── camera.xacro                # RGB camera (Dev 2)
-│   │   └── <sensor>.xacro              # lidar, bumper (Dev 1), imu (Dev 3)
+│   │   ├── lidar.xacro                 # 360° 2D lidar -> /scan (Dev 1)
+│   │   └── <sensor>.xacro              # bumper (Dev 1), imu (Dev 3)
 │   ├── meshes/                         # 3D models (.stl/.dae), if any
 │   ├── rviz/greenhouse_bot.rviz        # RViz config
 │   ├── CMakeLists.txt                  # installs urdf/, meshes/, rviz/
 │   └── package.xml
 ├── bringup/                            # how the system STARTS (ament_cmake)
 │   ├── launch/sim.launch.py            # Gazebo + robot + bridge + nodes + RViz
-│   ├── config/bridge.yaml              # gz <-> ROS topic bridge; node parameter YAMLs go here too
+│   ├── config/
+│   │   ├── bridge.yaml                 # gz <-> ROS topic bridge
+│   │   └── obstacle_detector.yaml      # node parameters, one <node>.yaml per node
 │   ├── worlds/greenhouse.sdf           # walls, rows, fruit, checkpoint panels, world plugins
 │   ├── CMakeLists.txt                  # installs launch/, config/, worlds/
 │   └── package.xml
@@ -127,8 +130,12 @@ src/
     │   ├── __init__.py
     │   ├── color_detection.py          # ROS-free logic (pure Python/OpenCV), unit tested
     │   ├── color_detector_node.py      # ROS node that wraps color_detection
+    │   ├── obstacle_detection.py       # ROS-free lidar logic (pure numpy), unit tested
+    │   ├── obstacle_detector_node.py   # ROS node: /scan -> obstacle state + RViz markers
     │   └── wasd_teleop_node.py         # ROS node: keyboard -> /cmd_vel
-    ├── test/test_color_detection.py    # pytest tests for the ROS-free logic
+    ├── test/                           # pytest tests for the ROS-free logic
+    │   ├── test_color_detection.py
+    │   └── test_obstacle_detection.py
     ├── resource/behavior               # empty marker file, lets ROS find the package
     ├── setup.py                        # every node is registered under console_scripts
     ├── setup.cfg
@@ -162,7 +169,7 @@ Planned files per developer:
 
 | Dev   | Files                                                                                                         |
 |-------|---------------------------------------------------------------------------------------------------------------|
-| Dev 1 | `urdf/lidar.xacro`, `urdf/bumper.xacro`, checkpoint panels in `greenhouse.sdf`, `safety.py`, `safety_node.py` |
+| Dev 1 | `urdf/lidar.xacro`, `urdf/bumper.xacro`, checkpoint panels in `greenhouse.sdf`, `obstacle_detection.py`, `obstacle_detector_node.py`, `safety.py`, `safety_node.py` |
 | Dev 2 | `urdf/camera.xacro`, `color_detection.py`, `color_detector_node.py`                                           |
 | Dev 3 | `urdf/imu.xacro`, `navigation.py`, `navigation_node.py`                                                       |
 
@@ -189,6 +196,9 @@ Agree on topic names and message types before coding, and update this list when 
 | Topic                     | Type                      | Owner   |
 |---------------------------|---------------------------|---------|
 | `/scan`                   | `sensor_msgs/LaserScan`   | Dev 1   |
+| `/obstacle_detector/state` (`CLEAR`, `WARN`, `STOP`) | `std_msgs/String` | Dev 1 |
+| `/obstacle_detector/front_distance` | `std_msgs/Float32` | Dev 1 |
+| `/obstacle_detector/markers` | `visualization_msgs/MarkerArray` | Dev 1 |
 | `/bumper`                 | `ros_gz_interfaces/Contacts` | Dev 1 |
 | `/safety/stop`            | `std_msgs/Bool`           | Dev 1   |
 | `/camera/image_raw`       | `sensor_msgs/Image`       | Dev 2   |
