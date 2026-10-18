@@ -18,7 +18,7 @@ setup(
     license='MIT',
     entry_points={
         'console_scripts': [
-            'wasd_teleop = behavior.wasd_teleop:main',
+            'wasd_teleop = behavior.wasd_teleop_node:main',
             'color_detector = behavior.color_detector_node:main',
         ],
     },
