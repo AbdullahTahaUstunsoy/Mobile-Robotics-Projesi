@@ -67,9 +67,9 @@ Go through this list before every push and before asking for review. A PR that f
 - [ ] Your branch is up to date with `main` (`git pull origin main`), and conflicts are resolved.
 - [ ] Clean build passes with no errors:
       `rm -rf build install log && colcon build --symlink-install`
-- [ ] Unit tests pass: `python3 -m pytest -q src/midterm_behavior/test`
+- [ ] Unit tests pass: `python3 -m pytest -q src/behavior/test`
 - [ ] The simulation still launches and the robot drives with `wasd_teleop`:
-      `ros2 launch midterm_bringup sim.launch.py`
+      `ros2 launch bringup sim.launch.py`
 - [ ] Your new topics actually publish (`ros2 topic list`, `ros2 topic echo <topic> --once`).
 - [ ] `git status` shows only the files you meant to change: no `build/`, `install/`, `log/`,
       `__pycache__/`, recordings or personal config files.
@@ -105,39 +105,39 @@ Go through this list before every push and before asking for review. A PR that f
 
 ```
 src/
-├── midterm_description/        # what the robot IS
+├── description/                      # what the robot IS
 │   ├── urdf/
-│   │   ├── greenhouse_bot.urdf.xacro   # main model: chassis, wheels, sensor includes
-│   │   ├── gazebo.xacro                # robot-wide gz plugins (DiffDrive, joint states)
-│   │   ├── inertial_macros.xacro       # shared inertia macros
-│   │   └── <sensor>.xacro              # one file per sensor: camera, lidar, imu, bumper
-│   ├── meshes/                 # 3D models (.stl/.dae), if any
-│   └── rviz/                   # RViz configs
-├── midterm_bringup/            # how the system STARTS
-│   ├── launch/                 # *.launch.py files
-│   ├── config/                 # YAML: bridge.yaml, node parameter files
-│   └── worlds/                 # Gazebo .sdf worlds (walls, rows, fruit, checkpoint panels)
-└── midterm_behavior/           # what the robot DOES (all Python nodes)
-    ├── midterm_behavior/
-    │   ├── <name>.py           # ROS-free logic (pure Python/OpenCV), unit tested
-    │   └── <name>_node.py      # thin ROS node that wraps the logic and handles topics
-    ├── test/test_<name>.py     # pytest tests for the ROS-free logic
-    └── setup.py                # register every node under console_scripts
+│   │   ├── greenhouse_bot.urdf.xacro # main model: chassis, wheels, sensor includes
+│   │   ├── gazebo.xacro              # robot-wide gz plugins (DiffDrive, joint states)
+│   │   ├── inertial_macros.xacro     # shared inertia macros
+│   │   └── <sensor>.xacro            # one file per sensor: camera, lidar, imu, bumper
+│   ├── meshes/                       # 3D models (.stl/.dae), if any
+│   └── rviz/                         # RViz configs
+├── bringup/                          # how the system STARTS
+│   ├── launch/                       # *.launch.py files
+│   ├── config/                       # YAML: bridge.yaml, node parameter files
+│   └── worlds/                       # Gazebo .sdf worlds (walls, rows, fruit, checkpoint panels)
+└── behavior/                         # what the robot DOES (all Python nodes)
+    ├── behavior/
+    │   ├── <name>.py                 # ROS-free logic (pure Python/OpenCV), unit tested
+    │   └── <name>_node.py            # thin ROS node that wraps the logic and handles topics
+    ├── test/test_<name>.py           # pytest tests for the ROS-free logic
+    └── setup.py                      # register every node under console_scripts
 ```
 
 | You are adding...                          | Put it in                                         |
 |--------------------------------------------|---------------------------------------------------|
-| A new sensor (link, joint, `<sensor>` tag) | `midterm_description/urdf/<sensor>.xacro` + one `<xacro:include>` in `greenhouse_bot.urdf.xacro` |
-| A gz system plugin for the robot           | `midterm_description/urdf/gazebo.xacro`           |
-| A gz system plugin for the world (e.g. contact, imu) | `<plugin>` at the top of `midterm_bringup/worlds/greenhouse.sdf` |
-| Objects in the world (panels, obstacles)   | `midterm_bringup/worlds/greenhouse.sdf`           |
-| A gz ↔ ROS topic bridge                    | `midterm_bringup/config/bridge.yaml`, under `# --- Sensors ---` |
-| Node parameters (speeds, thresholds)       | `midterm_bringup/config/<node>.yaml`              |
-| Starting a node with the sim               | `midterm_bringup/launch/sim.launch.py`            |
-| A new ROS node                             | `midterm_behavior/midterm_behavior/<name>_node.py` + entry in `setup.py` |
-| Algorithm code (detection, safety logic, path math) | `midterm_behavior/midterm_behavior/<name>.py`, no `rclpy` imports |
-| Tests                                      | `midterm_behavior/test/test_<name>.py`            |
-| RViz display changes                       | `midterm_description/rviz/greenhouse_bot.rviz`    |
+| A new sensor (link, joint, `<sensor>` tag) | `description/urdf/<sensor>.xacro` + one `<xacro:include>` in `greenhouse_bot.urdf.xacro` |
+| A gz system plugin for the robot           | `description/urdf/gazebo.xacro`           |
+| A gz system plugin for the world (e.g. contact, imu) | `<plugin>` at the top of `bringup/worlds/greenhouse.sdf` |
+| Objects in the world (panels, obstacles)   | `bringup/worlds/greenhouse.sdf`           |
+| A gz ↔ ROS topic bridge                    | `bringup/config/bridge.yaml`, under `# --- Sensors ---` |
+| Node parameters (speeds, thresholds)       | `bringup/config/<node>.yaml`              |
+| Starting a node with the sim               | `bringup/launch/sim.launch.py`            |
+| A new ROS node                             | `behavior/behavior/<name>_node.py` + entry in `setup.py` |
+| Algorithm code (detection, safety logic, path math) | `behavior/behavior/<name>.py`, no `rclpy` imports |
+| Tests                                      | `behavior/test/test_<name>.py`            |
+| RViz display changes                       | `description/rviz/greenhouse_bot.rviz`    |
 | Screenshots, videos, diagrams for the report | `docs/media/`                                   |
 | New commands / how-to                      | `COMMANDS.md`; package overview in `README.md`    |
 
@@ -155,12 +155,12 @@ Do not put files in `build/`, `install/` or `log/`: colcon generates them and th
 
 These files are shared by everyone, so keep your changes to them minimal:
 
-- `src/midterm_description/urdf/greenhouse_bot.urdf.xacro`
-- `src/midterm_description/urdf/gazebo.xacro`
-- `src/midterm_bringup/config/bridge.yaml`
-- `src/midterm_bringup/launch/sim.launch.py`
-- `src/midterm_behavior/setup.py`
-- `src/midterm_bringup/worlds/greenhouse.sdf`
+- `src/description/urdf/greenhouse_bot.urdf.xacro`
+- `src/description/urdf/gazebo.xacro`
+- `src/bringup/config/bridge.yaml`
+- `src/bringup/launch/sim.launch.py`
+- `src/behavior/setup.py`
+- `src/bringup/worlds/greenhouse.sdf`
 
 Put each sensor in its own xacro file (`lidar.xacro`, `imu.xacro`, `bumper.xacro`, like `camera.xacro`)
 and only add a one-line `<xacro:include>` to the main URDF. Put each ROS node in its own Python file.
