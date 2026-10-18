@@ -105,49 +105,66 @@ Go through this list before every push and before asking for review. A PR that f
 
 ```
 src/
-├── description/                      # what the robot IS
+├── description/                        # what the robot IS (ament_cmake)
 │   ├── urdf/
-│   │   ├── greenhouse_bot.urdf.xacro # main model: chassis, wheels, sensor includes
-│   │   ├── gazebo.xacro              # robot-wide gz plugins (DiffDrive, joint states)
-│   │   ├── inertial_macros.xacro     # shared inertia macros
-│   │   └── <sensor>.xacro            # one file per sensor: camera, lidar, imu, bumper
-│   ├── meshes/                       # 3D models (.stl/.dae), if any
-│   └── rviz/                         # RViz configs
-├── bringup/                          # how the system STARTS
-│   ├── launch/                       # *.launch.py files
-│   ├── config/                       # YAML: bridge.yaml, node parameter files
-│   └── worlds/                       # Gazebo .sdf worlds (walls, rows, fruit, checkpoint panels)
-└── behavior/                         # what the robot DOES (all Python nodes)
-    ├── behavior/
-    │   ├── <name>.py                 # ROS-free logic (pure Python/OpenCV), unit tested
-    │   └── <name>_node.py            # thin ROS node that wraps the logic and handles topics
-    ├── test/test_<name>.py           # pytest tests for the ROS-free logic
-    └── setup.py                      # register every node under console_scripts
+│   │   ├── greenhouse_bot.urdf.xacro   # main model: chassis, wheels, one include per sensor
+│   │   ├── gazebo.xacro                # robot-wide gz plugins (DiffDrive, joint states)
+│   │   ├── inertial_macros.xacro       # shared inertia macros
+│   │   ├── camera.xacro                # RGB camera (Dev 2)
+│   │   └── <sensor>.xacro              # lidar, bumper (Dev 1), imu (Dev 3)
+│   ├── meshes/                         # 3D models (.stl/.dae), if any
+│   ├── rviz/greenhouse_bot.rviz        # RViz config
+│   ├── CMakeLists.txt                  # installs urdf/, meshes/, rviz/
+│   └── package.xml
+├── bringup/                            # how the system STARTS (ament_cmake)
+│   ├── launch/sim.launch.py            # Gazebo + robot + bridge + nodes + RViz
+│   ├── config/bridge.yaml              # gz <-> ROS topic bridge; node parameter YAMLs go here too
+│   ├── worlds/greenhouse.sdf           # walls, rows, fruit, checkpoint panels, world plugins
+│   ├── CMakeLists.txt                  # installs launch/, config/, worlds/
+│   └── package.xml
+└── behavior/                           # what the robot DOES: the ROS package (ament_python)
+    ├── behavior/                       # the Python module: `from behavior.<name> import ...`
+    │   ├── __init__.py
+    │   ├── color_detection.py          # ROS-free logic (pure Python/OpenCV), unit tested
+    │   ├── color_detector_node.py      # ROS node that wraps color_detection
+    │   └── wasd_teleop_node.py         # ROS node: keyboard -> /cmd_vel
+    ├── test/test_color_detection.py    # pytest tests for the ROS-free logic
+    ├── resource/behavior               # empty marker file, lets ROS find the package
+    ├── setup.py                        # every node is registered under console_scripts
+    ├── setup.cfg
+    └── package.xml
 ```
 
-| You are adding...                          | Put it in                                         |
-|--------------------------------------------|---------------------------------------------------|
-| A new sensor (link, joint, `<sensor>` tag) | `description/urdf/<sensor>.xacro` + one `<xacro:include>` in `greenhouse_bot.urdf.xacro` |
-| A gz system plugin for the robot           | `description/urdf/gazebo.xacro`           |
-| A gz system plugin for the world (e.g. contact, imu) | `<plugin>` at the top of `bringup/worlds/greenhouse.sdf` |
-| Objects in the world (panels, obstacles)   | `bringup/worlds/greenhouse.sdf`           |
-| A gz ↔ ROS topic bridge                    | `bringup/config/bridge.yaml`, under `# --- Sensors ---` |
-| Node parameters (speeds, thresholds)       | `bringup/config/<node>.yaml`              |
-| Starting a node with the sim               | `bringup/launch/sim.launch.py`            |
-| A new ROS node                             | `behavior/behavior/<name>_node.py` + entry in `setup.py` |
-| Algorithm code (detection, safety logic, path math) | `behavior/behavior/<name>.py`, no `rclpy` imports |
-| Tests                                      | `behavior/test/test_<name>.py`            |
-| RViz display changes                       | `description/rviz/greenhouse_bot.rviz`    |
-| Screenshots, videos, diagrams for the report | `docs/media/`                                   |
-| New commands / how-to                      | `COMMANDS.md`; package overview in `README.md`    |
+`behavior/behavior/` is not a duplicate: the outer folder is the ROS package, the inner one is the
+Python module you import. Every ROS 2 Python package has this layout, so do not rename or flatten it.
+
+Naming: `<name>.py` holds the logic with no `rclpy` imports, `<name>_node.py` is the ROS node.
+The executable name in `setup.py` drops the `_node` suffix (`ros2 run behavior color_detector`).
+
+| You are adding...                                    | Put it in                                                    |
+|------------------------------------------------------|--------------------------------------------------------------|
+| A new sensor (link, joint, `<sensor>` tag)           | `description/urdf/<sensor>.xacro` + one `<xacro:include>` in `greenhouse_bot.urdf.xacro` |
+| A gz system plugin for the robot                     | `description/urdf/gazebo.xacro`                              |
+| A gz system plugin for the world (e.g. contact, imu) | `<plugin>` at the top of `bringup/worlds/greenhouse.sdf`     |
+| Objects in the world (panels, obstacles)             | `bringup/worlds/greenhouse.sdf`                              |
+| A gz ↔ ROS topic bridge                              | `bringup/config/bridge.yaml`, under `# --- Sensors ---`      |
+| Node parameters (speeds, thresholds)                 | `bringup/config/<node>.yaml`                                 |
+| Starting a node with the sim                         | `bringup/launch/sim.launch.py`                               |
+| A new ROS node                                       | `behavior/behavior/<name>_node.py` + entry in `setup.py`     |
+| Algorithm code (detection, safety logic, path math)  | `behavior/behavior/<name>.py`, no `rclpy` imports            |
+| Tests                                                | `behavior/test/test_<name>.py`                               |
+| A new dependency (e.g. `sensor_msgs`, `tf2_ros`)     | `package.xml` of the package that uses it                    |
+| RViz display changes                                 | `description/rviz/greenhouse_bot.rviz`                       |
+| Screenshots, videos, diagrams for the report         | `docs/media/`                                                |
+| New commands / how-to                                | `COMMANDS.md`; package overview in `README.md`               |
 
 Planned files per developer:
 
-| Dev   | Files                                                                                     |
-|-------|-------------------------------------------------------------------------------------------|
+| Dev   | Files                                                                                                         |
+|-------|---------------------------------------------------------------------------------------------------------------|
 | Dev 1 | `urdf/lidar.xacro`, `urdf/bumper.xacro`, checkpoint panels in `greenhouse.sdf`, `safety.py`, `safety_node.py` |
-| Dev 2 | `urdf/camera.xacro`, `color_detection.py`, `color_detector_node.py`                       |
-| Dev 3 | `urdf/imu.xacro`, `navigation.py`, `navigation_node.py`                                   |
+| Dev 2 | `urdf/camera.xacro`, `color_detection.py`, `color_detector_node.py`                                           |
+| Dev 3 | `urdf/imu.xacro`, `navigation.py`, `navigation_node.py`                                                       |
 
 Do not put files in `build/`, `install/` or `log/`: colcon generates them and they are not committed.
 
