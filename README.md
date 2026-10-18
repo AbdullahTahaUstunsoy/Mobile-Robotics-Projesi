@@ -6,11 +6,11 @@ A Gazebo Sim greenhouse world for ripe fruit (apple) detection and a 4-wheel rob
 
 | Package | Contents |
 | --- | --- |
-| `midterm_bringup` | `sim.launch.py`, `worlds/greenhouse.sdf`, `config/bridge.yaml` |
-| `midterm_description` | Robot model (`urdf/greenhouse_bot.urdf.xacro`): 4-wheel skid-steer base, Gazebo DiffDrive plugin, `urdf/camera.xacro`; RViz config `rviz/greenhouse_bot.rviz` |
-| `midterm_behavior` | `wasd_teleop`: teleop node that publishes `/cmd_vel` from the keyboard; `color_detector`: apple and checkpoint detection in the camera image |
+| `bringup` | `sim.launch.py`, `worlds/greenhouse.sdf`, `config/bridge.yaml` |
+| `description` | Robot model (`urdf/greenhouse_bot.urdf.xacro`): 4-wheel skid-steer base, Gazebo DiffDrive plugin, `urdf/camera.xacro`; RViz config `rviz/greenhouse_bot.rviz` |
+| `behavior` | `wasd_teleop`: teleop node that publishes `/cmd_vel` from the keyboard; `color_detector`: apple and checkpoint detection in the camera image |
 
-## World: `src/midterm_bringup/worlds/greenhouse.sdf`
+## World: `src/bringup/worlds/greenhouse.sdf`
 
 - 3 planter rows (y = 1.4, 0.0, -1.4) with 2 aisles between them
 - 9 fruit on the middle row: 5 red (ripe), 4 green (unripe)
@@ -68,14 +68,14 @@ Run `source /opt/ros/lyrical/setup.bash && source install/setup.bash` in every n
 Terminal 1 — Gazebo, robot, bridge, color detector and RViz:
 
 ~~~bash
-ros2 launch midterm_bringup sim.launch.py
+ros2 launch bringup sim.launch.py
 ~~~
 
 Terminal 2 — keyboard driving (this terminal must be focused):
 
 ~~~bash
 source /opt/ros/lyrical/setup.bash && source install/setup.bash
-ros2 run midterm_behavior wasd_teleop
+ros2 run behavior wasd_teleop
 ~~~
 
 | Key | Motion |
@@ -93,7 +93,7 @@ RViz shows the robot model, TF, odometry, the raw camera image and the color det
 
 Launch arguments: `headless:=true` (no Gazebo GUI), `rviz:=false` (do not open RViz), `x`, `y`, `yaw` (start pose, default aisle 1: `-0.5`, `0.65`, `0.0`), `world` (a different world file).
 
-To open only the world: `gz sim -r src/midterm_bringup/worlds/greenhouse.sdf`
+To open only the world: `gz sim -r src/bringup/worlds/greenhouse.sdf`
 
 ## RGB camera and color detection
 
@@ -124,5 +124,5 @@ colors `0.9 0.05 0.05` (red) and `0.05 0.8 0.1` (green). Detection was tested wi
 ~~~bash
 ros2 run rqt_image_view rqt_image_view /color_detector/debug_image
 ros2 topic echo /color_detector/red_apple
-colcon test --packages-select midterm_behavior && colcon test-result --verbose   # unit tests
+colcon test --packages-select behavior && colcon test-result --verbose   # unit tests
 ~~~

@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'midterm_behavior'
+package_name = 'behavior'
 
 setup(
     name=package_name,
@@ -18,8 +18,8 @@ setup(
     license='MIT',
     entry_points={
         'console_scripts': [
-            'wasd_teleop = midterm_behavior.wasd_teleop:main',
-            'color_detector = midterm_behavior.color_detector:main',
+            'wasd_teleop = behavior.wasd_teleop_node:main',
+            'color_detector = behavior.color_detector_node:main',
         ],
     },
 )

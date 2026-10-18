@@ -16,7 +16,7 @@ from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import Image
 
-from midterm_behavior.color_detection import detect, draw_debug, HsvThresholds, LABELS
+from behavior.color_detection import detect, draw_debug, HsvThresholds, LABELS
 
 
 class ColorDetector(Node):
