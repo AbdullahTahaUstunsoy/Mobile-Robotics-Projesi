@@ -5,7 +5,7 @@
 -->
 <robot name="greenhouse_bot" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-  <xacro:include filename="$(find midterm_description)/urdf/inertial_macros.xacro"/>
+  <xacro:include filename="$(find description)/urdf/inertial_macros.xacro"/>
 
   <!-- Chassis -->
   <xacro:property name="chassis_length" value="0.55"/>
@@ -103,10 +103,9 @@
   <xacro:wheel prefix="rear_left" x_sign="-1" y_sign="1"/>
   <xacro:wheel prefix="rear_right" x_sign="-1" y_sign="-1"/>
 
-  <xacro:include filename="$(find midterm_description)/urdf/gazebo.xacro"/>
+  <xacro:include filename="$(find description)/urdf/gazebo.xacro"/>
 
   <!-- Sensors -->
-  <xacro:include filename="$(find midterm_description)/urdf/camera.xacro"/>
-  <xacro:include filename="$(find midterm_description)/urdf/lidar.xacro"/>
+  <xacro:include filename="$(find description)/urdf/camera.xacro"/>
 
 </robot>

@@ -26,34 +26,34 @@ Details and private repo access: `README.md` → *Setup*.
 ```bash
 source /opt/ros/lyrical/setup.bash              # ROS 2 (if not in .bashrc)
 colcon build --symlink-install                  # all packages
-colcon build --symlink-install --packages-select midterm_behavior   # a single package
+colcon build --symlink-install --packages-select behavior  # a single package
 source install/setup.bash                       # once in every new terminal
 ```
 
 - With `--symlink-install`, changes to Python, launch, xacro, world and yaml files take effect **without rebuilding**.
   Rebuild after adding a new file, a new node (`setup.py` entry point) or changing `CMakeLists.txt` / `package.xml`.
-- `Package 'midterm_bringup' not found` → `source install/setup.bash` was not run in that terminal.
+- `Package 'bringup' not found` → `source install/setup.bash` was not run in that terminal.
 - Clean build: `rm -rf build install log && colcon build --symlink-install`
 
 ## 2. Simulation
 
 ```bash
-ros2 launch midterm_bringup sim.launch.py       # Gazebo + robot + bridge + color_detector + RViz
+ros2 launch bringup sim.launch.py       # Gazebo + robot + bridge + color_detector + RViz
 ```
 
 | Argument | Default | Description |
 |----------|---------|-------------|
 | `headless` | `false` | Gazebo without GUI (server only) |
-| `rviz` | `true` | Open RViz (`src/midterm_description/rviz/greenhouse_bot.rviz`) |
+| `rviz` | `true` | Open RViz (`src/description/rviz/greenhouse_bot.rviz`) |
 | `x`, `y`, `yaw` | `-0.5`, `0.65`, `0.0` | Robot start pose (aisle 1, middle row on the right) |
 | `world` | `greenhouse.sdf` | World file |
 
-To open only the world: `gz sim -r src/midterm_bringup/worlds/greenhouse.sdf`
+To open only the world: `gz sim -r src/bringup/worlds/greenhouse.sdf`
 
 ## 3. Driving the robot
 
 ```bash
-ros2 run midterm_behavior wasd_teleop          # hold w/a/s/d, q/e arc, PgUp/PgDn speed, space stop
+ros2 run behavior wasd_teleop          # hold w/a/s/d, q/e arc, PgUp/PgDn speed, space stop
 ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.3}}"
 ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "{}"                 # stop
 ```
@@ -73,8 +73,8 @@ ros2 run rqt_image_view rqt_image_view /color_detector/debug_image   # detection
 ros2 run rqt_image_view rqt_image_view /camera/image_raw             # raw image
 ros2 topic echo /color_detector/red_apple                            # x: horizontal offset, z: area ratio
 ros2 topic hz /camera/image_raw                                      # ~15 Hz
-ros2 run midterm_behavior color_detector --ros-args -p green_sat_min:=140   # tune a threshold (thresholds are read at startup)
-python3 -m pytest -q src/midterm_behavior/test                       # unit tests
+ros2 run behavior color_detector --ros-args -p green_sat_min:=140   # tune a threshold (thresholds are read at startup)
+python3 -m pytest -q src/behavior/test                               # unit tests
 ```
 
 ## 4. Figures for the report
@@ -89,8 +89,8 @@ ros2 run tf2_ros tf2_echo odom base_footprint         # transform between two fr
 
 ```bash
 # Xacro / URDF check
-xacro src/midterm_description/urdf/greenhouse_bot.urdf.xacro > /tmp/bot.urdf && check_urdf /tmp/bot.urdf
-gz sdf -k src/midterm_bringup/worlds/greenhouse.sdf   # is the world file valid
+xacro src/description/urdf/greenhouse_bot.urdf.xacro > /tmp/bot.urdf && check_urdf /tmp/bot.urdf
+gz sdf -k src/bringup/worlds/greenhouse.sdf   # is the world file valid
 ```
 
 ### Headless simulation test
@@ -99,7 +99,7 @@ Use a different `ROS_DOMAIN_ID` so it does not mix with an open simulation:
 
 ```bash
 export ROS_DOMAIN_ID=42
-ros2 launch midterm_bringup sim.launch.py headless:=true rviz:=false
+ros2 launch bringup sim.launch.py headless:=true rviz:=false
 gz model -m greenhouse_bot -p        # true pose in Gazebo (ground truth): x y z / roll pitch yaw
 gz topic -l                           # Gazebo-side topics (before the bridge)
 ```

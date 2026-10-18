@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 
-from midterm_behavior.color_detection import detect
+from behavior.color_detection import detect
 
 # Colors sampled from the Gazebo camera (BGR)
 FOLIAGE = (47, 83, 47)

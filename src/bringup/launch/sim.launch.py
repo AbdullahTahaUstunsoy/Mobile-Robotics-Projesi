@@ -1,7 +1,7 @@
 """Start the greenhouse world, spawn the robot, bridge topics, start the color detector and open RViz.
 
 Drive it with WASD teleop in a second terminal:
-    ros2 run midterm_behavior wasd_teleop
+    ros2 run behavior wasd_teleop
 """
 
 import os
@@ -17,8 +17,8 @@ import xacro
 
 
 def generate_launch_description():
-    bringup_share = get_package_share_directory('midterm_bringup')
-    description_share = get_package_share_directory('midterm_description')
+    bringup_share = get_package_share_directory('bringup')
+    description_share = get_package_share_directory('description')
     ros_gz_sim_share = get_package_share_directory('ros_gz_sim')
 
     world = LaunchConfiguration('world')
@@ -74,7 +74,7 @@ def generate_launch_description():
     )
 
     color_detector = Node(
-        package='midterm_behavior',
+        package='behavior',
         executable='color_detector',
         parameters=[{'use_sim_time': True}],
         output='screen',
