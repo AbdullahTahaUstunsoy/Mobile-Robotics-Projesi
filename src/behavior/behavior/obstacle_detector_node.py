@@ -58,9 +58,12 @@ class ObstacleDetector(Node):
         self.state_pub.publish(String(data=result.state))
         self.distance_pub.publish(Float32(data=result.front_distance))
         if result.state != self.state:
-            log = self.get_logger().warning if result.state == STOP else self.get_logger().info
             distance = '' if math.isinf(result.front_distance) else f' ({result.front_distance:.2f} m)'
-            log(f'{result.state}{distance}')
+            # One call site per severity: rclpy refuses to log from the same line with a different one
+            if result.state == STOP:
+                self.get_logger().warning(f'{result.state}{distance}')
+            else:
+                self.get_logger().info(f'{result.state}{distance}')
             self.state = result.state
 
         if self.marker_pub.get_subscription_count() > 0:
