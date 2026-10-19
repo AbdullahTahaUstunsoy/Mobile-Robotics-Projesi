@@ -15,6 +15,7 @@ A Gazebo Sim greenhouse world for ripe fruit (apple) detection and a 4-wheel rob
 - 3 planter rows (y = 1.4, 0.0, -1.4) with 2 aisles between them
 - 9 fruit on the middle row: 5 red (ripe), 4 green (unripe)
 - An 11 x 5.4 m area enclosed by four walls
+- A low orange box (0.1 m tall, at x = -1.5, y = 0.65, behind the start pose) for bumper tests: below the lidar scan plane, only the bumper detects it
 - No external models; runs as a single file
 
 ## Setup
@@ -135,7 +136,7 @@ A 360° 2D lidar (`urdf/lidar.xacro`) sits at the front of the top plate, scan p
 The `obstacle_detector` node starts automatically with `sim.launch.py`. It drops the points on the robot's own body,
 splits the scan into obstacles (clusters of neighbouring points) and checks the **corridor** straight ahead
 (the strip the robot will drive through, ±0.25 m): the nearest point inside it decides the state
-`STOP` (< 0.5 m), `WARN` (< 1.0 m) or `CLEAR`. Parameters are in `src/bringup/config/obstacle_detector.yaml`.
+`STOP` (< 0.25 m), `WARN` (< 1.0 m) or `CLEAR`. Parameters are in `src/bringup/config/obstacle_detector.yaml`.
 
 | Topic | Type | Description |
 | --- | --- | --- |
@@ -162,7 +163,8 @@ passes it on to `/cmd_vel` and removes forward motion (`linear.x > 0`) while
 - `BUMPER`: the bumper touched something less than `bumper_hold_time` (1 s) ago, or
 - `OBSTACLE`: `obstacle_detector` reports `STOP` (turn off with `obstacle_stop: false`).
 
-Reversing and turning in place are always allowed, so the robot can back away. Parameters are in
+Reversing and turning in place are always allowed, so the robot can back away.
+To try the bumper, turn around at the start pose and drive into the low orange box ~1 m behind it. Parameters are in
 `src/bringup/config/safety.yaml`. Anything that publishes straight to `/cmd_vel` bypasses the filter.
 
 | Topic | Type | Description |
