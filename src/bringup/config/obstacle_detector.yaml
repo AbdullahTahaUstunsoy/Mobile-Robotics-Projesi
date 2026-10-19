@@ -3,7 +3,8 @@
 obstacle_detector:
   ros__parameters:
     corridor_half_width: 0.25   # robot half width (0.175 m) + margin
-    stop_distance: 0.5          # nearest point in the corridor closer than this -> STOP
+    stop_distance: 0.25         # nearest point in the corridor closer than this -> STOP
+                                # (lidar is 0.105 m behind the bumper: stops ~0.1 m before the bumper touches)
     warn_distance: 1.0          # ... closer than this -> WARN
     cluster_gap: 0.2            # neighbouring points farther apart start a new obstacle
     min_cluster_points: 3       # smaller clusters are treated as noise

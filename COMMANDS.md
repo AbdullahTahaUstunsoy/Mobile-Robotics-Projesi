@@ -84,7 +84,7 @@ python3 -m pytest -q src/behavior/test                               # unit test
 ros2 topic hz /scan                                                  # ~10 Hz
 ros2 topic echo /obstacle_detector/state                             # CLEAR / WARN / STOP
 ros2 topic echo /obstacle_detector/front_distance                    # nearest point ahead (m)
-ros2 run behavior obstacle_detector --ros-args -p stop_distance:=0.4 # tune a parameter (or edit config/obstacle_detector.yaml)
+ros2 run behavior obstacle_detector --ros-args -p stop_distance:=0.3 # tune a parameter (or edit config/obstacle_detector.yaml)
 ```
 
 ## 3d. Bumper and safety filter
@@ -94,9 +94,12 @@ ros2 topic echo /safety/stop                                         # True whil
 ros2 topic echo /bumper --field contacts                             # only while the bumper touches something
 gz topic -e -t /bumper                                               # Gazebo side, before the bridge
 ros2 run behavior safety --ros-args -p obstacle_stop:=false          # bumper only (or edit config/safety.yaml)
-# A low box (below the lidar plane) in front of the start pose, to try the bumper:
+# The world has a low orange box (low_obstacle) ~1 m behind the start pose: turn around and drive into it.
+# Another low box (below the lidar plane) anywhere, e.g. 0.45 m in front of the start pose:
 ros2 run ros_gz_sim create -world greenhouse -name low_box -x 0.3 -y 0.65 -z 0.05 -string \
   '<sdf version="1.9"><model name="low_box"><static>true</static><link name="l"><collision name="c"><geometry><box><size>0.1 0.4 0.1</size></box></geometry></collision><visual name="v"><geometry><box><size>0.1 0.4 0.1</size></box></geometry></visual></link></model></sdf>'
+gz service -s /world/greenhouse/remove --reqtype gz.msgs.Entity --reptype gz.msgs.Boolean --timeout 2000 \
+  --req 'name: "low_box", type: MODEL'                             # remove it again
 ```
 
 ## 4. Figures for the report
