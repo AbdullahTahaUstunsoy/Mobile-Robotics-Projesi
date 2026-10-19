@@ -14,13 +14,14 @@ setup(
     zip_safe=True,
     maintainer='TODO',
     maintainer_email='TODO@example.com',
-    description='WASD teleop, camera color detection and lidar obstacle detection nodes.',
+    description='WASD teleop, camera color detection, lidar obstacle detection and bumper safety nodes.',
     license='MIT',
     entry_points={
         'console_scripts': [
             'wasd_teleop = behavior.wasd_teleop_node:main',
             'color_detector = behavior.color_detector_node:main',
             'obstacle_detector = behavior.obstacle_detector_node:main',
+            'safety = behavior.safety_node:main',
         ],
     },
 )
