@@ -1,14 +1,14 @@
 # Mobile-Robotics-Projesi
 
-A Gazebo Sim greenhouse world for ripe fruit (apple) detection and a 4-wheel robot driven with the keyboard (WASD). The robot currently has an RGB camera (red/green apple and RED/GREEN checkpoint detection) and a 2D lidar (obstacle detection); the other sensors are being added.
+A Gazebo Sim greenhouse world for ripe fruit (apple) detection and a 4-wheel robot driven with the keyboard (WASD). The robot currently has an RGB camera (red/green apple and RED/GREEN checkpoint detection), a 2D lidar (obstacle detection) and a front bumper (contact sensor) behind a safety filter; the other sensors are being added.
 
 ## Packages
 
 | Package | Contents |
 | --- | --- |
-| `bringup` | `sim.launch.py`, `worlds/greenhouse.sdf`, `config/bridge.yaml`, `config/obstacle_detector.yaml` |
-| `description` | Robot model (`urdf/greenhouse_bot.urdf.xacro`): 4-wheel skid-steer base, Gazebo DiffDrive plugin, `urdf/camera.xacro`, `urdf/lidar.xacro`; RViz config `rviz/greenhouse_bot.rviz` |
-| `behavior` | `wasd_teleop`: teleop node that publishes `/cmd_vel` from the keyboard; `color_detector`: apple and checkpoint detection in the camera image; `obstacle_detector`: obstacle detection in the lidar scan |
+| `bringup` | `sim.launch.py`, `worlds/greenhouse.sdf`, `config/bridge.yaml`, `config/obstacle_detector.yaml`, `config/safety.yaml` |
+| `description` | Robot model (`urdf/greenhouse_bot.urdf.xacro`): 4-wheel skid-steer base, Gazebo DiffDrive plugin, `urdf/camera.xacro`, `urdf/lidar.xacro`, `urdf/bumper.xacro`; RViz config `rviz/greenhouse_bot.rviz` |
+| `behavior` | `wasd_teleop`: teleop node that publishes `/cmd_vel_raw` from the keyboard; `color_detector`: apple and checkpoint detection in the camera image; `obstacle_detector`: obstacle detection in the lidar scan; `safety`: filters `/cmd_vel_raw` into `/cmd_vel` using the bumper and the lidar |
 
 ## World: `src/bringup/worlds/greenhouse.sdf`
 
@@ -65,7 +65,7 @@ Run `source /opt/ros/lyrical/setup.bash && source install/setup.bash` in every n
 
 ## Run
 
-Terminal 1 — Gazebo, robot, bridge, color and obstacle detectors and RViz:
+Terminal 1 — Gazebo, robot, bridge, color and obstacle detectors, safety filter and RViz:
 
 ~~~bash
 ros2 launch bringup sim.launch.py
@@ -148,4 +148,31 @@ splits the scan into obstacles (clusters of neighbouring points) and checks the 
 ros2 topic echo /obstacle_detector/state
 ros2 topic echo /obstacle_detector/front_distance
 python3 -m pytest -q src/behavior/test   # unit tests
+~~~
+
+## Bumper and safety filter
+
+A thin bumper plate (`urdf/bumper.xacro`) covers the chassis front and the front wheels, ~0.055–0.135 m above the
+ground: below the lidar scan plane, so it catches low obstacles the lidar cannot see. A Gazebo contact sensor
+reports every touch (it needs the `Contact` system plugin at the top of `greenhouse.sdf`).
+
+Teleop (and later navigation) publishes **`/cmd_vel_raw`**; the `safety` node, started by `sim.launch.py`,
+passes it on to `/cmd_vel` and removes forward motion (`linear.x > 0`) while
+
+- `BUMPER`: the bumper touched something less than `bumper_hold_time` (1 s) ago, or
+- `OBSTACLE`: `obstacle_detector` reports `STOP` (turn off with `obstacle_stop: false`).
+
+Reversing and turning in place are always allowed, so the robot can back away. Parameters are in
+`src/bringup/config/safety.yaml`. Anything that publishes straight to `/cmd_vel` bypasses the filter.
+
+| Topic | Type | Description |
+| --- | --- | --- |
+| `/bumper` | `ros_gz_interfaces/Contacts` | Bumper contacts, published only while something touches it |
+| `/cmd_vel_raw` | `geometry_msgs/Twist` | Unfiltered commands (teleop, navigation) |
+| `/cmd_vel` | `geometry_msgs/Twist` | Safe command sent to the robot |
+| `/safety/stop` | `std_msgs/Bool` | `True` while forward motion is blocked |
+
+~~~bash
+ros2 topic echo /safety/stop
+ros2 topic echo /bumper --field contacts
 ~~~

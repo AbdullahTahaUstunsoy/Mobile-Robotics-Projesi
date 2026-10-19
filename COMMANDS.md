@@ -38,7 +38,7 @@ source install/setup.bash                       # once in every new terminal
 ## 2. Simulation
 
 ```bash
-ros2 launch bringup sim.launch.py       # Gazebo + robot + bridge + color_detector + obstacle_detector + RViz
+ros2 launch bringup sim.launch.py       # Gazebo + robot + bridge + color_detector + obstacle_detector + safety + RViz
 ```
 
 | Argument | Default | Description |
@@ -54,13 +54,13 @@ To open only the world: `gz sim -r src/bringup/worlds/greenhouse.sdf`
 
 ```bash
 ros2 run behavior wasd_teleop          # hold w/a/s/d, q/e arc, PgUp/PgDn speed, space stop
-ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.3}}"
-ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "{}"                 # stop
+ros2 topic pub --once /cmd_vel_raw geometry_msgs/msg/Twist "{linear: {x: 0.3}}"  # through the safety filter
+ros2 topic pub --once /cmd_vel_raw geometry_msgs/msg/Twist "{}"                 # stop
 ```
 
-Published topics: `/cmd_vel`, `/odom`, `/tf`, `/tf_static`, `/joint_states`, `/clock`, `/robot_description`,
+Published topics: `/cmd_vel_raw`, `/cmd_vel`, `/odom`, `/tf`, `/tf_static`, `/joint_states`, `/clock`, `/robot_description`,
 `/camera/image_raw`, `/camera/camera_info`, `/color_detector/{red_apple,green_apple,red_checkpoint,green_checkpoint,debug_image}`,
-`/scan`, `/obstacle_detector/{state,front_distance,markers}`.
+`/scan`, `/obstacle_detector/{state,front_distance,markers}`, `/bumper`, `/safety/stop`.
 
 ```bash
 ros2 topic list
@@ -85,6 +85,18 @@ ros2 topic hz /scan                                                  # ~10 Hz
 ros2 topic echo /obstacle_detector/state                             # CLEAR / WARN / STOP
 ros2 topic echo /obstacle_detector/front_distance                    # nearest point ahead (m)
 ros2 run behavior obstacle_detector --ros-args -p stop_distance:=0.4 # tune a parameter (or edit config/obstacle_detector.yaml)
+```
+
+## 3d. Bumper and safety filter
+
+```bash
+ros2 topic echo /safety/stop                                         # True while forward motion is blocked
+ros2 topic echo /bumper --field contacts                             # only while the bumper touches something
+gz topic -e -t /bumper                                               # Gazebo side, before the bridge
+ros2 run behavior safety --ros-args -p obstacle_stop:=false          # bumper only (or edit config/safety.yaml)
+# A low box (below the lidar plane) in front of the start pose, to try the bumper:
+ros2 run ros_gz_sim create -world greenhouse -name low_box -x 0.3 -y 0.65 -z 0.05 -string \
+  '<sdf version="1.9"><model name="low_box"><static>true</static><link name="l"><collision name="c"><geometry><box><size>0.1 0.4 0.1</size></box></geometry></collision><visual name="v"><geometry><box><size>0.1 0.4 0.1</size></box></geometry></visual></link></model></sdf>'
 ```
 
 ## 4. Figures for the report
@@ -123,7 +135,9 @@ pkill -f gz-sim-main
 ```
 
 - `libEGL warning: ... dri2 screen` warnings are normal in headless runs.
-- Robot does not move: check that `/cmd_vel` has a publisher with `ros2 topic info /cmd_vel`, and that it reaches Gazebo with `gz topic -e -t /cmd_vel`.
+- Robot does not move: check that `/cmd_vel` has a publisher with `ros2 topic info /cmd_vel` (the `safety` node), that `/safety/stop` is `False`, and that it reaches Gazebo with `gz topic -e -t /cmd_vel`.
+- Robot does not drive forward: `/safety/stop` is `True` (bumper touched or lidar `STOP`): reverse or turn away.
+- Nothing on `/bumper`: it is only published during a contact; check the `Contact` plugin in `greenhouse.sdf` and `gz topic -l | grep bumper`.
 - Teleop does not react to keys: the terminal running `wasd_teleop` must be focused.
 - Nothing on `/scan`: check that `lidar.xacro` is included in `greenhouse_bot.urdf.xacro` and that it shows in `gz topic -l`.
 - Nothing on `/color_detector/*`: check that `/camera/image_raw` is publishing (`ros2 topic hz`), then look at the mask inset in `debug_image`.

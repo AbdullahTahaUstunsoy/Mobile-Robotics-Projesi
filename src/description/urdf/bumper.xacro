@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<!--
+  Front bumper: a thin plate on the chassis front, a bit wider than the wheels, ~0.055-0.135 m
+  above ground (below the lidar scan plane, so it catches low obstacles the lidar does not see).
+  A contact sensor reports every touch. Needs the Contact system plugin in the world file.
+  Data: /bumper (ros_gz_interfaces/msg/Contacts), published only while something touches it.
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:property name="bumper_thickness" value="0.03"/>
+  <xacro:property name="bumper_width" value="0.36"/>    <!-- wheels reach y = ±0.175 -->
+  <xacro:property name="bumper_height" value="0.08"/>
+  <xacro:property name="bumper_z" value="0.02"/>        <!-- from base_link (+0.075 → 0.095 m above ground) -->
+
+  <material name="bumper_black"><color rgba="0.05 0.05 0.05 1.0"/></material>
+
+  <link name="bumper_link">
+    <visual>
+      <geometry><box size="${bumper_thickness} ${bumper_width} ${bumper_height}"/></geometry>
+      <material name="bumper_black"/>
+    </visual>
+    <!-- Left unnamed on purpose: gz names it bumper_link_collision, which the sensor refers to -->
+    <collision>
+      <geometry><box size="${bumper_thickness} ${bumper_width} ${bumper_height}"/></geometry>
+    </collision>
+    <xacro:box_inertia m="0.1" x="${bumper_thickness}" y="${bumper_width}" z="${bumper_height}">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </xacro:box_inertia>
+  </link>
+
+  <joint name="bumper_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="bumper_link"/>
+    <origin xyz="${chassis_length/2 + bumper_thickness/2} 0 ${bumper_z}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- URDF->SDF would merge bumper_link into its parent and rename the collision
+       (base_link_fixed_joint_lump__...), so the contact sensor would find nothing. Keep it a link. -->
+  <gazebo reference="bumper_joint">
+    <preserveFixedJoint>true</preserveFixedJoint>
+  </gazebo>
+
+  <gazebo reference="bumper_link">
+    <sensor name="bumper" type="contact">
+      <update_rate>30</update_rate>
+      <always_on>true</always_on>
+      <!-- The Contact system reads the topic from <contact>, not from <sensor> -->
+      <contact>
+        <collision>bumper_link_collision</collision>
+        <topic>bumper</topic>
+      </contact>
+    </sensor>
+  </gazebo>
+
+</robot>

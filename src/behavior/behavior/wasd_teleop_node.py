@@ -46,7 +46,8 @@ class WasdTeleop(Node):
         # Terminals send no key-release event: stop when no key arrives within this time.
         # Must be longer than the OS key-repeat delay (~0.5 s) to avoid stuttering.
         self.release_timeout = self.declare_parameter('release_timeout', 0.6).value
-        self.publisher = self.create_publisher(Twist, 'cmd_vel', 10)
+        # The safety node filters cmd_vel_raw and drives the robot on cmd_vel
+        self.publisher = self.create_publisher(Twist, 'cmd_vel_raw', 10)
 
     def publish(self, linear_dir, angular_dir):
         msg = Twist()

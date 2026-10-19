@@ -1,0 +1,6 @@
+# Parameters of behavior/safety_node.py (defaults: SafetyParams in safety.py).
+safety:
+  ros__parameters:
+    bumper_hold_time: 1.0       # s: forward motion stays blocked this long after the last bumper contact
+    obstacle_stop: true         # also block forward motion while obstacle_detector reports STOP
+    rate: 20.0                  # Hz: how often the last command is re-checked and /safety/stop is published

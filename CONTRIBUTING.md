@@ -112,7 +112,8 @@ src/
 │   │   ├── inertial_macros.xacro       # shared inertia macros
 │   │   ├── camera.xacro                # RGB camera (Dev 2)
 │   │   ├── lidar.xacro                 # 360° 2D lidar -> /scan (Dev 1)
-│   │   └── <sensor>.xacro              # bumper (Dev 1), imu (Dev 3)
+│   │   ├── bumper.xacro                # front bumper contact sensor -> /bumper (Dev 1)
+│   │   └── <sensor>.xacro              # imu (Dev 3)
 │   ├── meshes/                         # 3D models (.stl/.dae), if any
 │   ├── rviz/greenhouse_bot.rviz        # RViz config
 │   ├── CMakeLists.txt                  # installs urdf/, meshes/, rviz/
@@ -121,7 +122,8 @@ src/
 │   ├── launch/sim.launch.py            # Gazebo + robot + bridge + nodes + RViz
 │   ├── config/
 │   │   ├── bridge.yaml                 # gz <-> ROS topic bridge
-│   │   └── obstacle_detector.yaml      # node parameters, one <node>.yaml per node
+│   │   ├── obstacle_detector.yaml      # node parameters, one <node>.yaml per node
+│   │   └── safety.yaml
 │   ├── worlds/greenhouse.sdf           # walls, rows, fruit, checkpoint panels, world plugins
 │   ├── CMakeLists.txt                  # installs launch/, config/, worlds/
 │   └── package.xml
@@ -132,10 +134,13 @@ src/
     │   ├── color_detector_node.py      # ROS node that wraps color_detection
     │   ├── obstacle_detection.py       # ROS-free lidar logic (pure numpy), unit tested
     │   ├── obstacle_detector_node.py   # ROS node: /scan -> obstacle state + RViz markers
-    │   └── wasd_teleop_node.py         # ROS node: keyboard -> /cmd_vel
+    │   ├── safety.py                   # ROS-free safety rules (bumper, lidar STOP), unit tested
+    │   ├── safety_node.py              # ROS node: /cmd_vel_raw -> /cmd_vel, /safety/stop
+    │   └── wasd_teleop_node.py         # ROS node: keyboard -> /cmd_vel_raw
     ├── test/                           # pytest tests for the ROS-free logic
     │   ├── test_color_detection.py
-    │   └── test_obstacle_detection.py
+    │   ├── test_obstacle_detection.py
+    │   └── test_safety.py
     ├── resource/behavior               # empty marker file, lets ROS find the package
     ├── setup.py                        # every node is registered under console_scripts
     ├── setup.cfg
@@ -201,6 +206,8 @@ Agree on topic names and message types before coding, and update this list when 
 | `/obstacle_detector/markers` | `visualization_msgs/MarkerArray` | Dev 1 |
 | `/bumper`                 | `ros_gz_interfaces/Contacts` | Dev 1 |
 | `/safety/stop`            | `std_msgs/Bool`           | Dev 1   |
+| `/cmd_vel_raw` (teleop / navigation publish here, never to `/cmd_vel`) | `geometry_msgs/Twist` | all |
+| `/cmd_vel` (only the `safety` node publishes) | `geometry_msgs/Twist` | Dev 1 |
 | `/camera/image_raw`       | `sensor_msgs/Image`       | Dev 2   |
 | `/color_detector/<label>` (`red_apple`, `green_apple`, `red_checkpoint`, `green_checkpoint`) | `geometry_msgs/PointStamped` | Dev 2 |
 | `/color_detector/debug_image` | `sensor_msgs/Image`   | Dev 2   |

@@ -1,5 +1,5 @@
 """Start the greenhouse world, spawn the robot, bridge topics, start the color and obstacle detectors
-and open RViz.
+and the safety filter, and open RViz.
 
 Drive it with WASD teleop in a second terminal:
     ros2 run behavior wasd_teleop
@@ -91,6 +91,18 @@ def generate_launch_description():
         output='screen',
     )
 
+    # Teleop / navigation publish /cmd_vel_raw; safety blocks forward motion on bumper contact or
+    # lidar STOP and drives the robot on /cmd_vel
+    safety = Node(
+        package='behavior',
+        executable='safety',
+        parameters=[
+            os.path.join(bringup_share, 'config', 'safety.yaml'),
+            {'use_sim_time': True},
+        ],
+        output='screen',
+    )
+
     rviz_node = Node(
         package='rviz2',
         executable='rviz2',
@@ -117,5 +129,6 @@ def generate_launch_description():
         bridge,
         color_detector,
         obstacle_detector,
+        safety,
         rviz_node,
     ])
