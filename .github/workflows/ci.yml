@@ -11,6 +11,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: ruff check
+        run: pipx run ruff check --output-format=github src/
+      - name: ruff format
+        run: pipx run ruff format --check src/
+
   build-and-test:
     runs-on: ubuntu-latest
     container: ros:lyrical-ros-base
