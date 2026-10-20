@@ -28,6 +28,8 @@ setup(
             'l_route = behavior.l_route_node:main',
             'waypoint = behavior.waypoint_node:main',
             'multi_waypoint = behavior.multi_waypoint_node:main',
+            'greenhouse_route = behavior.greenhouse_route_node:main',
+            'aisle_transition = behavior.aisle_transition_node:main',
         ],
     },
 )
