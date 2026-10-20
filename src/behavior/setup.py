@@ -30,6 +30,7 @@ setup(
             'multi_waypoint = behavior.multi_waypoint_node:main',
             'greenhouse_route = behavior.greenhouse_route_node:main',
             'aisle_transition = behavior.aisle_transition_node:main',
+            'second_aisle = behavior.second_aisle_node:main',
         ],
     },
 )
