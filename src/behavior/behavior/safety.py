@@ -10,13 +10,13 @@ from dataclasses import dataclass
 
 from behavior.obstacle_detection import STOP
 
-CLEAR, BUMPER, OBSTACLE = 'CLEAR', 'BUMPER', 'OBSTACLE'
+CLEAR, BUMPER, OBSTACLE = "CLEAR", "BUMPER", "OBSTACLE"
 
 
 @dataclass
 class SafetyParams:
-    bumper_hold_time: float = 1.0   # s: forward stays blocked this long after the last contact
-    obstacle_stop: bool = True      # also block forward on the lidar STOP state
+    bumper_hold_time: float = 1.0  # s: forward stays blocked this long after the last contact
+    obstacle_stop: bool = True  # also block forward on the lidar STOP state
 
 
 def stop_reason(last_contact_time, now, obstacle_state, params):

@@ -11,21 +11,21 @@ All coordinates are in the lidar frame (x forward, y left):
 Points inside the robot's own footprint (e.g. the camera mast) are dropped first.
 """
 
-from dataclasses import dataclass, field
 import math
+from dataclasses import dataclass, field
 
 import numpy as np
 
-CLEAR, WARN, STOP = 'CLEAR', 'WARN', 'STOP'
+CLEAR, WARN, STOP = "CLEAR", "WARN", "STOP"
 
 
 @dataclass
 class DetectorParams:
-    corridor_half_width: float = 0.25   # robot half width (0.175 m) + margin
+    corridor_half_width: float = 0.25  # robot half width (0.175 m) + margin
     stop_distance: float = 0.5
     warn_distance: float = 1.0
-    cluster_gap: float = 0.2            # neighbouring points farther apart start a new obstacle
-    min_cluster_points: int = 3         # smaller clusters are treated as noise
+    cluster_gap: float = 0.2  # neighbouring points farther apart start a new obstacle
+    min_cluster_points: int = 3  # smaller clusters are treated as noise
     # Robot footprint in the lidar frame (lidar is 0.2 m ahead of the chassis center)
     footprint_min_x: float = -0.5
     footprint_max_x: float = 0.1
@@ -34,16 +34,16 @@ class DetectorParams:
 
 @dataclass
 class Obstacle:
-    points: np.ndarray      # (N, 2) x, y in scan order
-    nearest: np.ndarray     # x, y of the point closest to the lidar
-    distance: float         # range to nearest
-    in_corridor: bool       # at least one point is inside the corridor ahead
+    points: np.ndarray  # (N, 2) x, y in scan order
+    nearest: np.ndarray  # x, y of the point closest to the lidar
+    distance: float  # range to nearest
+    in_corridor: bool  # at least one point is inside the corridor ahead
 
 
 @dataclass
 class DetectionResult:
     state: str
-    front_distance: float               # nearest point in the corridor, inf if none
+    front_distance: float  # nearest point in the corridor, inf if none
     obstacles: list = field(default_factory=list)
 
 
@@ -58,8 +58,11 @@ def scan_to_points(ranges, angle_min, angle_increment, range_min, range_max):
 
 def remove_footprint(points, params):
     x, y = points[:, 0], points[:, 1]
-    inside = ((x >= params.footprint_min_x) & (x <= params.footprint_max_x)
-              & (np.abs(y) <= params.footprint_half_width))
+    inside = (
+        (x >= params.footprint_min_x)
+        & (x <= params.footprint_max_x)
+        & (np.abs(y) <= params.footprint_half_width)
+    )
     return points[~inside]
 
 
@@ -70,9 +73,8 @@ def cluster(points, gap, wraps_around=False):
         return []
     jumps = np.linalg.norm(np.diff(points, axis=0), axis=1) > gap
     starts = np.concatenate(([0], np.nonzero(jumps)[0] + 1, [len(points)]))
-    clusters = [np.arange(s, e) for s, e in zip(starts[:-1], starts[1:])]
-    if (wraps_around and len(clusters) > 1
-            and np.linalg.norm(points[-1] - points[0]) <= gap):
+    clusters = [np.arange(s, e) for s, e in zip(starts[:-1], starts[1:], strict=True)]
+    if wraps_around and len(clusters) > 1 and np.linalg.norm(points[-1] - points[0]) <= gap:
         clusters[0] = np.concatenate((clusters.pop(), clusters[0]))
     return clusters
 
@@ -105,12 +107,14 @@ def detect(ranges, angle_min, angle_increment, range_min, range_max, params=None
         pts = points[idx]
         dists = np.linalg.norm(pts, axis=1)
         nearest = int(np.argmin(dists))
-        obstacles.append(Obstacle(
-            points=pts,
-            nearest=pts[nearest],
-            distance=float(dists[nearest]),
-            in_corridor=bool(ahead[idx].any()),
-        ))
+        obstacles.append(
+            Obstacle(
+                points=pts,
+                nearest=pts[nearest],
+                distance=float(dists[nearest]),
+                in_corridor=bool(ahead[idx].any()),
+            )
+        )
     obstacles.sort(key=lambda o: o.distance)
 
     return DetectionResult(classify(front_distance, params), front_distance, obstacles)

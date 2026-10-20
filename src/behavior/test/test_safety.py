@@ -1,5 +1,6 @@
-from behavior.obstacle_detection import CLEAR as LIDAR_CLEAR, STOP, WARN
-from behavior.safety import BUMPER, CLEAR, filter_cmd, OBSTACLE, SafetyParams, stop_reason
+from behavior.obstacle_detection import CLEAR as LIDAR_CLEAR
+from behavior.obstacle_detection import STOP, WARN
+from behavior.safety import BUMPER, CLEAR, OBSTACLE, SafetyParams, filter_cmd, stop_reason
 
 PARAMS = SafetyParams(bumper_hold_time=1.0)
 
