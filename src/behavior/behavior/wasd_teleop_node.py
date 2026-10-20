@@ -7,8 +7,8 @@ import termios
 import time
 import tty
 
-from geometry_msgs.msg import Twist
 import rclpy
+from geometry_msgs.msg import Twist
 from rclpy.node import Node
 from rclpy.signals import SignalHandlerOptions
 
@@ -23,31 +23,30 @@ WASD teleop - hold a key to drive, release to stop
 
 # key -> (linear direction, angular direction)
 BINDINGS = {
-    'w': (1.0, 0.0),
-    's': (-1.0, 0.0),
-    'a': (0.0, 1.0),
-    'd': (0.0, -1.0),
-    'q': (1.0, 1.0),
-    'e': (1.0, -1.0),
-    ' ': (0.0, 0.0),
+    "w": (1.0, 0.0),
+    "s": (-1.0, 0.0),
+    "a": (0.0, 1.0),
+    "d": (0.0, -1.0),
+    "q": (1.0, 1.0),
+    "e": (1.0, -1.0),
+    " ": (0.0, 0.0),
 }
 
 # Escape sequences sent by the terminal
-PAGE_UP = '\x1b[5~'
-PAGE_DOWN = '\x1b[6~'
+PAGE_UP = "\x1b[5~"
+PAGE_DOWN = "\x1b[6~"
 
 
 class WasdTeleop(Node):
-
     def __init__(self):
-        super().__init__('wasd_teleop')
-        self.linear_speed = self.declare_parameter('linear_speed', 0.3).value
-        self.angular_speed = self.declare_parameter('angular_speed', 0.8).value
+        super().__init__("wasd_teleop")
+        self.linear_speed = self.declare_parameter("linear_speed", 0.3).value
+        self.angular_speed = self.declare_parameter("angular_speed", 0.8).value
         # Terminals send no key-release event: stop when no key arrives within this time.
         # Must be longer than the OS key-repeat delay (~0.5 s) to avoid stuttering.
-        self.release_timeout = self.declare_parameter('release_timeout', 0.6).value
+        self.release_timeout = self.declare_parameter("release_timeout", 0.6).value
         # The safety node filters cmd_vel_raw and drives the robot on cmd_vel
-        self.publisher = self.create_publisher(Twist, 'cmd_vel_raw', 10)
+        self.publisher = self.create_publisher(Twist, "cmd_vel_raw", 10)
 
     def publish(self, linear_dir, angular_dir):
         msg = Twist()
@@ -56,8 +55,11 @@ class WasdTeleop(Node):
         self.publisher.publish(msg)
 
     def print_status(self):
-        print(f'\rlinear {self.linear_speed:.2f} m/s | angular {self.angular_speed:.2f} rad/s   ',
-              end='', flush=True)
+        print(
+            f"\rlinear {self.linear_speed:.2f} m/s | angular {self.angular_speed:.2f} rad/s   ",
+            end="",
+            flush=True,
+        )
 
 
 def read_key(timeout):
@@ -66,12 +68,12 @@ def read_key(timeout):
     if not select.select([fd], [], [], timeout)[0]:
         return None
     # Unbuffered reads: buffered stdin would hide the rest of an escape sequence from select()
-    key = os.read(fd, 1).decode(errors='ignore')
-    if key == '\x1b':
+    key = os.read(fd, 1).decode(errors="ignore")
+    if key == "\x1b":
         # Special keys (PgUp, arrows, ...) arrive as ESC followed by a few chars
         while select.select([fd], [], [], 0.01)[0]:
-            key += os.read(fd, 1).decode(errors='ignore')
-            if key[-1].isalpha() or key[-1] == '~':
+            key += os.read(fd, 1).decode(errors="ignore")
+            if key[-1].isalpha() or key[-1] == "~":
                 break
     return key
 
@@ -99,12 +101,12 @@ def main():
                     moving = False
                 continue
             key = key.lower()
-            if key == '\x03':
+            if key == "\x03":
                 break
             if key in BINDINGS:
                 linear_dir, angular_dir = BINDINGS[key]
                 node.publish(linear_dir, angular_dir)
-                moving = key != ' '
+                moving = key != " "
             elif key == PAGE_UP:
                 node.linear_speed *= 1.1
                 node.angular_speed *= 1.1
@@ -128,5 +130,5 @@ def main():
         rclpy.try_shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
