@@ -24,6 +24,7 @@ setup(
             'safety = behavior.safety_node:main',
             'imu_monitor = behavior.imu_monitor_node:main',
             'navigation = behavior.navigation_node:main',
+            'turn_90 = behavior.turn_90_node:main',
         ],
     },
 )
