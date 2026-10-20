@@ -25,7 +25,10 @@ class HsvThresholds:
     green_hue_max: int = 85
     green_sat_min: int = 130  # rejects foliage (S ~110) and the grey walls
     val_min: int = 50
+
+
 DEFAULT_THRESHOLDS = HsvThresholds()
+
 
 @dataclass
 class Detection:
