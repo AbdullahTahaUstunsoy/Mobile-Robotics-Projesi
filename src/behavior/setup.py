@@ -32,6 +32,7 @@ setup(
             'aisle_transition = behavior.aisle_transition_node:main',
             'second_aisle = behavior.second_aisle_node:main',
             'return_home = behavior.return_home_node:main',
+            'greenhouse_mission = behavior.greenhouse_mission_node:main',
         ],
     },
 )

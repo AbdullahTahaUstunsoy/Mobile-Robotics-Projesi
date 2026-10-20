@@ -191,10 +191,10 @@ class GreenhouseRoute(Node):
             self.start_imu = self.imu_yaw
             self.start_odom_yaw = a
 
-            self.target = (
-                x + distance * math.cos(a),
-                y + distance * math.sin(a)
-            )
+            # Koridor ekseni sabit: odom Y=0.
+            # Gazebo X=6.8 -> odom X=7.3.
+            # Baslangic acisi hedefi kaydirmamali.
+            self.target = (distance, 0.0)
 
             self.mode = 'DRIVE'
             self.started = now
@@ -211,10 +211,16 @@ class GreenhouseRoute(Node):
             return
 
         x, y, _ = self.pose
-        dx = self.target[0] - x
-        dy = self.target[1] - y
+        remaining = self.target[0] - x
 
-        remaining = math.hypot(dx, dy)
+        # Koridor merkezinden fazla uzaklasirsak
+        # guvenlik sistemini beklemeden dur.
+        if abs(y) > 0.12:
+            self.finish(
+                f'Yanal sapma cok fazla: {y:.3f} m. '
+                'Navigasyon durduruldu.'
+            )
+            return
 
         if remaining <= 0.05:
             self.finish(
@@ -224,14 +230,21 @@ class GreenhouseRoute(Node):
             )
             return
 
-        target_yaw = math.atan2(dy, dx)
+        # Nominal yon 0 derece.
+        # Y sapmasina gore kucuk duzeltme yap.
+        target_yaw = math.atan2(-2.0 * y, 1.0)
+        target_yaw = max(
+            -math.radians(10),
+            min(math.radians(10), target_yaw)
+        )
+
         error = wrap(target_yaw - self.heading())
 
         angular = 0.0
 
-        if abs(error) > math.radians(3):
+        if abs(error) > math.radians(1.0):
             angular = math.copysign(
-                min(0.30, max(0.12, abs(error))),
+                min(0.25, max(0.10, 1.5 * abs(error))),
                 error
             )
 
@@ -246,7 +259,7 @@ class GreenhouseRoute(Node):
 
         if now - self.last_log >= 2.0:
             self.get_logger().info(
-                f'Kalan: {remaining:.2f} m | '
+                f'Kalan: {remaining:.2f} m | Y sapmasi: {y:.3f} m | '
                 f'Yon hatasi: '
                 f'{math.degrees(error):.1f} derece'
             )
