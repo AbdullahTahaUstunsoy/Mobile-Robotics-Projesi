@@ -26,6 +26,7 @@ setup(
             'navigation = behavior.navigation_node:main',
             'turn_90 = behavior.turn_90_node:main',
             'l_route = behavior.l_route_node:main',
+            'waypoint = behavior.waypoint_node:main',
         ],
     },
 )
