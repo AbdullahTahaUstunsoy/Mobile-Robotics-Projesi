@@ -27,6 +27,7 @@ setup(
             'turn_90 = behavior.turn_90_node:main',
             'l_route = behavior.l_route_node:main',
             'waypoint = behavior.waypoint_node:main',
+            'multi_waypoint = behavior.multi_waypoint_node:main',
         ],
     },
 )
