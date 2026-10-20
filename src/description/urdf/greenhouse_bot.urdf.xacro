@@ -110,4 +110,6 @@
   <xacro:include filename="$(find description)/urdf/lidar.xacro"/>
   <xacro:include filename="$(find description)/urdf/bumper.xacro"/>
 
+  <xacro:include filename="$(find description)/urdf/imu.xacro"/>
+
 </robot>

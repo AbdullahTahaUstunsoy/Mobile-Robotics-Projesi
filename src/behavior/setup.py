@@ -22,6 +22,8 @@ setup(
             'color_detector = behavior.color_detector_node:main',
             'obstacle_detector = behavior.obstacle_detector_node:main',
             'safety = behavior.safety_node:main',
+            'imu_monitor = behavior.imu_monitor_node:main',
+            'navigation = behavior.navigation_node:main',
         ],
     },
 )
