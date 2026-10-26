@@ -220,6 +220,88 @@
         </visual>
       </link>
     </model>
+    <!-- Visual-only RED/GREEN checkpoints on east wall -->
+
+    <model name="red_checkpoint_panel">
+      <static>true</static>
+      <pose>8.44 1.0 0.40 0 0 0</pose>
+      <link name="link">
+
+        <visual name="colored_panel">
+          <geometry>
+            <box><size>0.02 0.34 0.34</size></box>
+          </geometry>
+          <material>
+            <ambient>1 0 0 1</ambient>
+            <diffuse>1 0 0 1</diffuse>
+          </material>
+        </visual>
+
+        <visual name="white_x_1">
+          <pose>-0.012 0 0 0.785398 0 0</pose>
+          <geometry>
+            <box><size>0.004 0.025 0.27</size></box>
+          </geometry>
+          <material>
+            <ambient>1 1 1 1</ambient>
+            <diffuse>1 1 1 1</diffuse>
+          </material>
+        </visual>
+
+        <visual name="white_x_2">
+          <pose>-0.012 0 0 -0.785398 0 0</pose>
+          <geometry>
+            <box><size>0.004 0.025 0.27</size></box>
+          </geometry>
+          <material>
+            <ambient>1 1 1 1</ambient>
+            <diffuse>1 1 1 1</diffuse>
+          </material>
+        </visual>
+
+      </link>
+    </model>
+
+    <model name="green_checkpoint_panel">
+      <static>true</static>
+      <pose>8.44 0.3 0.40 0 0 0</pose>
+      <link name="link">
+
+        <visual name="colored_panel">
+          <geometry>
+            <box><size>0.02 0.34 0.34</size></box>
+          </geometry>
+          <material>
+            <ambient>0 1 0 1</ambient>
+            <diffuse>0 1 0 1</diffuse>
+          </material>
+        </visual>
+
+        <visual name="white_x_1">
+          <pose>-0.012 0 0 0.785398 0 0</pose>
+          <geometry>
+            <box><size>0.004 0.025 0.27</size></box>
+          </geometry>
+          <material>
+            <ambient>1 1 1 1</ambient>
+            <diffuse>1 1 1 1</diffuse>
+          </material>
+        </visual>
+
+        <visual name="white_x_2">
+          <pose>-0.012 0 0 -0.785398 0 0</pose>
+          <geometry>
+            <box><size>0.004 0.025 0.27</size></box>
+          </geometry>
+          <material>
+            <ambient>1 1 1 1</ambient>
+            <diffuse>1 1 1 1</diffuse>
+          </material>
+        </visual>
+
+      </link>
+    </model>
+
     <model name="wall_north">
       <static>true</static>
       <pose>3.0 2.7 0.4 0 0 0</pose>
