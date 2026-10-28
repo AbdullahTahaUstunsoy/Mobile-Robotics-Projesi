@@ -1,8 +1,7 @@
 import math
 
 import numpy as np
-
-from behavior.obstacle_detection import CLEAR, cluster, detect, STOP, WARN
+from behavior.obstacle_detection import CLEAR, STOP, WARN, cluster, detect
 
 # Same layout as the Gazebo lidar: 360 rays over -pi..pi
 N = 360
@@ -85,7 +84,7 @@ def test_points_on_robot_body_are_ignored():
 
 def test_out_of_range_rays_are_ignored():
     ranges = empty_scan()
-    ranges[ray(0)] = 0.05     # below range_min
+    ranges[ray(0)] = 0.05  # below range_min
     ranges[ray(1)] = np.nan
     assert run(ranges).state == CLEAR
 

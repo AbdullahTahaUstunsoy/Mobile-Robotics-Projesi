@@ -1,6 +1,5 @@
-import numpy as np
 import cv2
-
+import numpy as np
 from behavior.color_detection import detect
 
 # Colors sampled from the Gazebo camera (BGR)
@@ -39,34 +38,34 @@ def test_background_ignored():
 
 def test_red_and_green_apples():
     dets, _ = detect(apple(apple(scene(), RED_APPLE, (100, 240)), GREEN_APPLE, (540, 240)))
-    assert set(dets) == {'red_apple', 'green_apple'}
-    assert dets['red_apple'].offset_x < -0.5
-    assert dets['green_apple'].offset_x > 0.5
+    assert set(dets) == {"red_apple", "green_apple"}
+    assert dets["red_apple"].offset_x < -0.5
+    assert dets["green_apple"].offset_x > 0.5
 
 
 def test_red_and_green_checkpoints():
     img = panel(scene(), RED_PANEL, ((40, 100), (200, 100), (200, 300), (40, 300)))
     img = panel(img, GREEN_PANEL, ((440, 100), (600, 100), (600, 300), (440, 300)))
     dets, _ = detect(img)
-    assert set(dets) == {'red_checkpoint', 'green_checkpoint'}
-    assert dets['red_checkpoint'].offset_x < 0 < dets['green_checkpoint'].offset_x
+    assert set(dets) == {"red_checkpoint", "green_checkpoint"}
+    assert dets["red_checkpoint"].offset_x < 0 < dets["green_checkpoint"].offset_x
 
 
 def test_checkpoint_seen_at_an_angle():
     # A panel on a side wall shows up as a trapezoid
     dets, _ = detect(panel(scene(), GREEN_PANEL, ((400, 150), (500, 110), (500, 330), (400, 290))))
-    assert set(dets) == {'green_checkpoint'}
+    assert set(dets) == {"green_checkpoint"}
 
 
 def test_apple_next_to_checkpoint_of_same_color():
     img = panel(scene(), RED_PANEL, ((380, 100), (560, 100), (560, 300), (380, 300)))
     dets, _ = detect(apple(img, RED_APPLE, (150, 240)))
-    assert set(dets) == {'red_apple', 'red_checkpoint'}
+    assert set(dets) == {"red_apple", "red_checkpoint"}
 
 
 def test_largest_blob_per_label():
     img = apple(apple(scene(), RED_APPLE, (100, 240), radius=15), RED_APPLE, (500, 240), radius=40)
-    assert detect(img)[0]['red_apple'].offset_x > 0
+    assert detect(img)[0]["red_apple"].offset_x > 0
 
 
 def test_tiny_blob_ignored():
