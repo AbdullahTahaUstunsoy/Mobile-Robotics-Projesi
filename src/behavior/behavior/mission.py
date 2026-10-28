@@ -15,14 +15,22 @@ Safety: while /safety/stop is True, driving stages hold still and turning stages
 safety_timeout.
 """
 
-from dataclasses import dataclass, field, fields
 import math
+from dataclasses import dataclass, field, fields
 
-from behavior.navigation import DriveParams, drive_to, follow_line, TurnGains, turn_rate, world_to_odom, wrap
+from behavior.navigation import (
+    DriveParams,
+    TurnGains,
+    drive_to,
+    follow_line,
+    turn_rate,
+    world_to_odom,
+    wrap,
+)
 
-RUNNING = 'RUNNING'
-DONE = 'DONE'
-FAILED = 'FAILED'
+RUNNING = "RUNNING"
+DONE = "DONE"
+FAILED = "FAILED"
 
 STOPPED = (0.0, 0.0)
 
@@ -48,13 +56,14 @@ class FollowLine(Stage):
     max_lateral: float = 0.12
 
     def step(self, pose, heading, elapsed):
-        cmd, remaining, lateral = follow_line(pose, heading, self.start, self.end,
-                                              params=self.drive, gains=self.turn)
+        cmd, remaining, lateral = follow_line(
+            pose, heading, self.start, self.end, params=self.drive, gains=self.turn
+        )
         if abs(lateral) > self.max_lateral:
-            return STOPPED, FAILED, f'lateral offset {lateral:.3f} m > {self.max_lateral:.2f} m'
+            return STOPPED, FAILED, f"lateral offset {lateral:.3f} m > {self.max_lateral:.2f} m"
         if remaining <= self.drive.goal_tolerance:
-            return STOPPED, DONE, f'lateral offset {lateral:.3f} m'
-        return cmd, RUNNING, f'remaining {remaining:.2f} m, lateral {lateral:.3f} m'
+            return STOPPED, DONE, f"lateral offset {lateral:.3f} m"
+        return cmd, RUNNING, f"remaining {remaining:.2f} m, lateral {lateral:.3f} m"
 
 
 @dataclass
@@ -64,8 +73,8 @@ class DriveTo(Stage):
     def step(self, pose, heading, elapsed):
         cmd, remaining = drive_to(pose, heading, self.target, self.drive, self.turn)
         if remaining <= self.drive.goal_tolerance:
-            return STOPPED, DONE, f'position error {remaining:.3f} m'
-        return cmd, RUNNING, f'remaining {remaining:.2f} m'
+            return STOPPED, DONE, f"position error {remaining:.3f} m"
+        return cmd, RUNNING, f"remaining {remaining:.2f} m"
 
 
 @dataclass
@@ -76,8 +85,12 @@ class TurnTo(Stage):
     def step(self, pose, heading, elapsed):
         error = wrap(self.yaw - heading)
         if abs(error) <= self.turn.deadband:
-            return STOPPED, DONE, f'heading error {math.degrees(error):.1f} deg'
-        return (0.0, turn_rate(error, self.turn)), RUNNING, f'remaining {math.degrees(error):.1f} deg'
+            return STOPPED, DONE, f"heading error {math.degrees(error):.1f} deg"
+        return (
+            (0.0, turn_rate(error, self.turn)),
+            RUNNING,
+            f"remaining {math.degrees(error):.1f} deg",
+        )
 
 
 @dataclass
@@ -87,18 +100,18 @@ class Wait(Stage):
 
     def step(self, pose, heading, elapsed):
         if elapsed >= self.duration:
-            return STOPPED, DONE, ''
-        return STOPPED, RUNNING, f'{self.duration - elapsed:.1f} s left'
+            return STOPPED, DONE, ""
+        return STOPPED, RUNNING, f"{self.duration - elapsed:.1f} s left"
 
 
 def _params(cls, spec):
     """Dataclass from a YAML dict; keys ending in _deg are converted to radians."""
     spec = dict(spec or {})
-    for key in [k for k in spec if k.endswith('_deg')]:
+    for key in [k for k in spec if k.endswith("_deg")]:
         spec[key[:-4]] = math.radians(spec.pop(key))
     unknown = set(spec) - {f.name for f in fields(cls)}
     if unknown:
-        raise ValueError(f'unknown {cls.__name__} keys: {sorted(unknown)}')
+        raise ValueError(f"unknown {cls.__name__} keys: {sorted(unknown)}")
     return cls(**spec)
 
 
@@ -107,28 +120,31 @@ def build_stages(specs, spawn=(0.0, 0.0, 0.0)):
     stages = []
     for i, spec in enumerate(specs):
         spec = dict(spec)
-        kind = spec.pop('type')
+        kind = spec.pop("type")
         common = {
-            'name': spec.pop('name', f'{i + 1}_{kind}'),
-            'timeout': float(spec.pop('timeout', 240.0)),
-            'watch': tuple(spec.pop('watch', ())),
-            'drive': _params(DriveParams, spec.pop('drive', None)),
-            'turn': _params(TurnGains, spec.pop('turn', None)),
+            "name": spec.pop("name", f"{i + 1}_{kind}"),
+            "timeout": float(spec.pop("timeout", 240.0)),
+            "watch": tuple(spec.pop("watch", ())),
+            "drive": _params(DriveParams, spec.pop("drive", None)),
+            "turn": _params(TurnGains, spec.pop("turn", None)),
         }
-        if kind == 'follow_line':
-            stage = FollowLine(**common, start=world_to_odom(*spec.pop('from'), spawn),
-                               end=world_to_odom(*spec.pop('to'), spawn),
-                               max_lateral=float(spec.pop('max_lateral', 0.12)))
-        elif kind == 'drive_to':
-            stage = DriveTo(**common, target=world_to_odom(*spec.pop('to'), spawn))
-        elif kind == 'turn_to':
-            stage = TurnTo(**common, yaw=wrap(math.radians(spec.pop('yaw_deg')) - spawn[2]))
-        elif kind == 'wait':
-            stage = Wait(**common, duration=float(spec.pop('duration')))
+        if kind == "follow_line":
+            stage = FollowLine(
+                **common,
+                start=world_to_odom(*spec.pop("from"), spawn),
+                end=world_to_odom(*spec.pop("to"), spawn),
+                max_lateral=float(spec.pop("max_lateral", 0.12)),
+            )
+        elif kind == "drive_to":
+            stage = DriveTo(**common, target=world_to_odom(*spec.pop("to"), spawn))
+        elif kind == "turn_to":
+            stage = TurnTo(**common, yaw=wrap(math.radians(spec.pop("yaw_deg")) - spawn[2]))
+        elif kind == "wait":
+            stage = Wait(**common, duration=float(spec.pop("duration")))
         else:
-            raise ValueError(f'unknown stage type {kind!r}')
+            raise ValueError(f"unknown stage type {kind!r}")
         if spec:
-            raise ValueError(f'stage {common["name"]}: unknown keys {sorted(spec)}')
+            raise ValueError(f"stage {common['name']}: unknown keys {sorted(spec)}")
         stages.append(stage)
     return stages
 
@@ -140,8 +156,10 @@ class StartCheck:
 
     def ok(self, pose):
         """The mission assumes a fresh odom: the robot must be at the odom origin."""
-        return (math.hypot(pose[0], pose[1]) <= self.xy_tolerance
-                and abs(wrap(pose[2])) <= self.yaw_tolerance)
+        return (
+            math.hypot(pose[0], pose[1]) <= self.xy_tolerance
+            and abs(wrap(pose[2])) <= self.yaw_tolerance
+        )
 
 
 class Mission:
@@ -152,8 +170,8 @@ class Mission:
         self.safety_timeout = safety_timeout
         self.index = 0
         self.status = RUNNING
-        self.progress = ''
-        self.seen = {}              # stage name -> labels seen during that stage
+        self.progress = ""
+        self.seen = {}  # stage name -> labels seen during that stage
         self._events = []
         self._stage_start = None
         self._stop_since = None
@@ -169,7 +187,7 @@ class Mission:
 
     def fail(self, reason):
         self.status = FAILED
-        self._events.append(f'MISSION FAILED: {reason}')
+        self._events.append(f"MISSION FAILED: {reason}")
 
     def on_detection(self, label):
         stage = self.stage
@@ -179,7 +197,7 @@ class Mission:
         seen = self.seen.setdefault(stage.name, set())
         if label not in seen:
             seen.add(label)
-            self._events.append(f'{stage.name}: {label} detected')
+            self._events.append(f"{stage.name}: {label} detected")
 
     def step(self, pose, heading, safety_stop, now):
         """-> (linear, angular) command for this tick."""
@@ -188,46 +206,52 @@ class Mission:
         stage = self.stage
         if self._stage_start is None:
             self._stage_start = now
-            self._events.append(f'STAGE {self.index + 1}/{len(self.stages)} START: {stage.name}')
+            self._events.append(f"STAGE {self.index + 1}/{len(self.stages)} START: {stage.name}")
         elapsed = now - self._stage_start
 
         if elapsed > stage.timeout:
-            self.fail(f'{stage.name} timed out after {stage.timeout:.0f} s')
+            self.fail(f"{stage.name} timed out after {stage.timeout:.0f} s")
             return STOPPED
 
         if safety_stop:
             if self._stop_since is None:
                 self._stop_since = now
-                self._events.append(f'{stage.name}: safety stop, waiting')
+                self._events.append(f"{stage.name}: safety stop, waiting")
             if now - self._stop_since > self.safety_timeout:
-                self.fail(f'safety stop longer than {self.safety_timeout:.0f} s')
+                self.fail(f"safety stop longer than {self.safety_timeout:.0f} s")
                 return STOPPED
             if stage.drives_forward:
                 return STOPPED
         elif self._stop_since is not None:
             self._stop_since = None
-            self._events.append(f'{stage.name}: safety clear, resuming')
+            self._events.append(f"{stage.name}: safety clear, resuming")
 
         cmd, status, message = stage.step(pose, heading, elapsed)
-        self.progress = f'{stage.name}: {message}'
+        self.progress = f"{stage.name}: {message}"
         if status == FAILED:
-            self.fail(f'{stage.name}: {message}')
+            self.fail(f"{stage.name}: {message}")
             return STOPPED
         if status == DONE:
             seen = sorted(self.seen.get(stage.name, ()))
             missed = sorted(set(stage.watch) - set(seen))
-            report = f' | seen: {seen}' + (f', not seen: {missed}' if missed else '') if stage.watch else ''
-            detail = f' ({message})' if message else ''
-            self._events.append(f'STAGE {self.index + 1}/{len(self.stages)} DONE: {stage.name}{detail}{report}')
+            report = (
+                f" | seen: {seen}" + (f", not seen: {missed}" if missed else "")
+                if stage.watch
+                else ""
+            )
+            detail = f" ({message})" if message else ""
+            self._events.append(
+                f"STAGE {self.index + 1}/{len(self.stages)} DONE: {stage.name}{detail}{report}"
+            )
             self.index += 1
             self._stage_start = None
             if self.index == len(self.stages):
                 self.status = DONE
-                self._events.append('MISSION COMPLETE')
+                self._events.append("MISSION COMPLETE")
             return STOPPED
         return cmd
 
 
 def load_mission(config, spawn=(0.0, 0.0, 0.0)):
     """(StartCheck, stages) from the parsed mission.yaml."""
-    return _params(StartCheck, config.get('start_check')), build_stages(config['stages'], spawn)
+    return _params(StartCheck, config.get("start_check")), build_stages(config["stages"], spawn)
