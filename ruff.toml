@@ -1,0 +1,6 @@
+line-length = 99
+target-version = "py312"
+
+[lint]
+select = ["E", "F", "W", "I", "B"]
+ignore = ["E501"]   # kod satırlarını ruff format kısaltıyor; uzun yorum ve docstring'lere izin ver

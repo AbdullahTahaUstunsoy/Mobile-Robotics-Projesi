@@ -10,34 +10,35 @@ The last command is re-checked on a timer: DiffDrive keeps driving with the last
 so a stop has to be sent even when no new command arrives.
 """
 
-from geometry_msgs.msg import Twist
 import rclpy
+from geometry_msgs.msg import Twist
 from rclpy.node import Node
 from ros_gz_interfaces.msg import Contacts
 from std_msgs.msg import Bool, String
 
-from behavior.safety import CLEAR, filter_cmd, SafetyParams, stop_reason
+from behavior.safety import CLEAR, SafetyParams, filter_cmd, stop_reason
 
 
 class Safety(Node):
-
     def __init__(self):
-        super().__init__('safety')
+        super().__init__("safety")
         defaults = SafetyParams()
-        self.params = SafetyParams(**{
-            name: type(value)(self.declare_parameter(name, value).value)
-            for name, value in vars(defaults).items()
-        })
-        rate = self.declare_parameter('rate', 20.0).value
-        self.cmd_pub = self.create_publisher(Twist, 'cmd_vel', 10)
-        self.stop_pub = self.create_publisher(Bool, 'safety/stop', 10)
-        self.create_subscription(Twist, 'cmd_vel_raw', self.on_cmd, 10)
-        self.create_subscription(Contacts, 'bumper', self.on_bumper, 10)
-        self.create_subscription(String, 'obstacle_detector/state', self.on_obstacle_state, 10)
+        self.params = SafetyParams(
+            **{
+                name: type(value)(self.declare_parameter(name, value).value)
+                for name, value in vars(defaults).items()
+            }
+        )
+        rate = self.declare_parameter("rate", 20.0).value
+        self.cmd_pub = self.create_publisher(Twist, "cmd_vel", 10)
+        self.stop_pub = self.create_publisher(Bool, "safety/stop", 10)
+        self.create_subscription(Twist, "cmd_vel_raw", self.on_cmd, 10)
+        self.create_subscription(Contacts, "bumper", self.on_bumper, 10)
+        self.create_subscription(String, "obstacle_detector/state", self.on_obstacle_state, 10)
         self.create_timer(1.0 / rate, self.on_timer)
         self.cmd = Twist()
-        self.sent = None            # (linear, angular) last published on cmd_vel
-        self.last_contact = None    # seconds, node clock
+        self.sent = None  # (linear, angular) last published on cmd_vel
+        self.last_contact = None  # seconds, node clock
         self.obstacle_state = None
         self.reason = CLEAR
 
@@ -65,9 +66,9 @@ class Safety(Node):
         if reason != self.reason:
             # One call site per severity: rclpy refuses to log from the same line with a different one
             if reason == CLEAR:
-                self.get_logger().info(f'{reason}: forward motion allowed')
+                self.get_logger().info(f"{reason}: forward motion allowed")
             else:
-                self.get_logger().warning(f'{reason}: forward motion blocked')
+                self.get_logger().warning(f"{reason}: forward motion blocked")
             self.reason = reason
 
         linear, angular = filter_cmd(self.cmd.linear.x, self.cmd.angular.z, reason)
@@ -91,5 +92,5 @@ def main():
         rclpy.try_shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
