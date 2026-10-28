@@ -24,13 +24,13 @@ def generate_launch_description():
     description_share = get_package_share_directory("description")
     ros_gz_sim_share = get_package_share_directory("ros_gz_sim")
 
-    world = LaunchConfiguration('world')
-    headless = LaunchConfiguration('headless')
-    rviz = LaunchConfiguration('rviz')
-    mission = LaunchConfiguration('mission')
-    x = LaunchConfiguration('x')
-    y = LaunchConfiguration('y')
-    yaw = LaunchConfiguration('yaw')
+    world = LaunchConfiguration("world")
+    headless = LaunchConfiguration("headless")
+    rviz = LaunchConfiguration("rviz")
+    mission = LaunchConfiguration("mission")
+    x = LaunchConfiguration("x")
+    y = LaunchConfiguration("y")
+    yaw = LaunchConfiguration("yaw")
 
     xacro_file = os.path.join(description_share, "urdf", "greenhouse_bot.urdf.xacro")
     # Process xacro in Python (a shell 'xacro <path>' command breaks on paths with spaces)
@@ -133,38 +133,48 @@ def generate_launch_description():
 
     # Mission targets are in world coordinates; it needs the spawn pose to convert them to odom
     mission_node = Node(
-        package='behavior',
-        executable='greenhouse_mission',
-        parameters=[{
-            # Typed as float so that e.g. x:=1 is not passed as an integer
-            'spawn_x': ParameterValue(x, value_type=float),
-            'spawn_y': ParameterValue(y, value_type=float),
-            'spawn_yaw': ParameterValue(yaw, value_type=float),
-        }],
+        package="behavior",
+        executable="greenhouse_mission",
+        parameters=[
+            {
+                # Typed as float so that e.g. x:=1 is not passed as an integer
+                "spawn_x": ParameterValue(x, value_type=float),
+                "spawn_y": ParameterValue(y, value_type=float),
+                "spawn_yaw": ParameterValue(yaw, value_type=float),
+            }
+        ],
         condition=IfCondition(mission),
-        output='screen',
+        output="screen",
     )
 
-    return LaunchDescription([
-        DeclareLaunchArgument(
-            'world', default_value=os.path.join(bringup_share, 'worlds', 'greenhouse.sdf'),
-            description='Gazebo world file'),
-        DeclareLaunchArgument(
-            'headless', default_value='false', description='Run Gazebo server only (no GUI)'),
-        DeclareLaunchArgument('rviz', default_value='true', description='Open RViz'),
-        DeclareLaunchArgument(
-            'mission', default_value='false', description='Run the autonomous greenhouse mission'),
-        # Start in aisle 1, heading +x, with the middle row on the right
-        DeclareLaunchArgument('x', default_value='-0.5'),
-        DeclareLaunchArgument('y', default_value='0.65'),
-        DeclareLaunchArgument('yaw', default_value='0.0'),
-        gazebo,
-        robot_state_publisher,
-        spawn_robot,
-        bridge,
-        color_detector,
-        obstacle_detector,
-        safety,
-        rviz_node,
-        mission_node,
-    ])
+    return LaunchDescription(
+        [
+            DeclareLaunchArgument(
+                "world",
+                default_value=os.path.join(bringup_share, "worlds", "greenhouse.sdf"),
+                description="Gazebo world file",
+            ),
+            DeclareLaunchArgument(
+                "headless", default_value="false", description="Run Gazebo server only (no GUI)"
+            ),
+            DeclareLaunchArgument("rviz", default_value="true", description="Open RViz"),
+            DeclareLaunchArgument(
+                "mission",
+                default_value="false",
+                description="Run the autonomous greenhouse mission",
+            ),
+            # Start in aisle 1, heading +x, with the middle row on the right
+            DeclareLaunchArgument("x", default_value="-0.5"),
+            DeclareLaunchArgument("y", default_value="0.65"),
+            DeclareLaunchArgument("yaw", default_value="0.0"),
+            gazebo,
+            robot_state_publisher,
+            spawn_robot,
+            bridge,
+            color_detector,
+            obstacle_detector,
+            safety,
+            rviz_node,
+            mission_node,
+        ]
+    )

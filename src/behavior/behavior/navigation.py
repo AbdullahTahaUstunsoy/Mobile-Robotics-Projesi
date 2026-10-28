@@ -4,8 +4,8 @@ Poses are (x, y, yaw) in the odom frame; angles are radians. Each controller ret
 (linear, angular) command for /cmd_vel_raw.
 """
 
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 
 
 def wrap(angle):
@@ -28,7 +28,7 @@ def world_to_odom(x, y, spawn):
 @dataclass
 class TurnGains:
     gain: float = 1.2
-    min_speed: float = 0.12     # below this the robot does not overcome friction
+    min_speed: float = 0.12  # below this the robot does not overcome friction
     max_speed: float = 0.35
     deadband: float = math.radians(3)
 
@@ -42,21 +42,31 @@ class DriveParams:
     turn_in_place: float = math.radians(10)  # heading error above which the robot stops and turns
 
 
-def turn_rate(error, gains=TurnGains()):
+def turn_rate(error, gains=None):
     """Proportional turn rate, clamped to min..max speed, zero inside the deadband."""
+    if gains is None:
+        gains = TurnGains()
     if abs(error) <= gains.deadband:
         return 0.0
-    return math.copysign(min(gains.max_speed, max(gains.min_speed, gains.gain * abs(error))), error)
+    return math.copysign(
+        min(gains.max_speed, max(gains.min_speed, gains.gain * abs(error))), error
+    )
 
 
-def forward_speed(heading_error, remaining, params=DriveParams()):
+def forward_speed(heading_error, remaining, params=None):
+    if params is None:
+        params = DriveParams()
     if abs(heading_error) > params.turn_in_place:
         return 0.0
     return params.slow_speed if remaining < params.slow_distance else params.speed
 
 
-def drive_to(pose, heading, target, params=DriveParams(), gains=TurnGains()):
+def drive_to(pose, heading, target, params=None, gains=None):
     """Head for target (x, y). Returns ((linear, angular), remaining distance)."""
+    if params is None:
+        params = DriveParams()
+    if gains is None:
+        gains = TurnGains()
     dx, dy = target[0] - pose[0], target[1] - pose[1]
     remaining = math.hypot(dx, dy)
     error = wrap(math.atan2(dy, dx) - heading)
@@ -77,12 +87,19 @@ def line_offsets(pose, start, end):
     return along, lateral
 
 
-def follow_line(pose, heading, start, end, correction_gain=2.0, max_correction=math.radians(10),
-                params=DriveParams(), gains=TurnGains()):
+def follow_line(
+    pose, heading, start, end, correction_gain=2.0, max_correction=None, params=None, gains=None
+):
     """Drive along the line start -> end, steering back towards it.
 
     Returns ((linear, angular), remaining distance along the line, lateral offset).
     """
+    if params is None:
+        params = DriveParams()
+    if gains is None:
+        gains = TurnGains()
+    if max_correction is None:
+        max_correction = math.radians(10)
     remaining, lateral = line_offsets(pose, start, end)
     line_yaw = math.atan2(end[1] - start[1], end[0] - start[0])
     correction = max(-max_correction, min(max_correction, math.atan(-correction_gain * lateral)))
