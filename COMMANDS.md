@@ -45,6 +45,7 @@ ros2 launch bringup sim.launch.py       # Gazebo + robot + bridge + color_detect
 |----------|---------|-------------|
 | `headless` | `false` | Gazebo without GUI (server only) |
 | `rviz` | `true` | Open RViz (`src/description/rviz/greenhouse_bot.rviz`) |
+| `mission` | `false` | Run the autonomous greenhouse mission |
 | `x`, `y`, `yaw` | `-0.5`, `0.65`, `0.0` | Robot start pose (aisle 1, middle row on the right) |
 | `world` | `greenhouse.sdf` | World file |
 
@@ -60,7 +61,7 @@ ros2 topic pub --once /cmd_vel_raw geometry_msgs/msg/Twist "{}"                 
 
 Published topics: `/cmd_vel_raw`, `/cmd_vel`, `/odom`, `/tf`, `/tf_static`, `/joint_states`, `/clock`, `/robot_description`,
 `/camera/image_raw`, `/camera/camera_info`, `/color_detector/{red_apple,green_apple,red_checkpoint,green_checkpoint,debug_image}`,
-`/scan`, `/obstacle_detector/{state,front_distance,markers}`, `/bumper`, `/safety/stop`.
+`/scan`, `/obstacle_detector/{state,front_distance,markers}`, `/bumper`, `/safety/stop`, `/imu`.
 
 ```bash
 ros2 topic list
@@ -101,6 +102,18 @@ ros2 run ros_gz_sim create -world greenhouse -name low_box -x 0.3 -y 0.65 -z 0.0
 gz service -s /world/greenhouse/remove --reqtype gz.msgs.Entity --reptype gz.msgs.Boolean --timeout 2000 \
   --req 'name: "low_box", type: MODEL'                             # remove it again
 ```
+
+## 3e. Autonomous mission
+
+```bash
+ros2 launch bringup sim.launch.py mission:=true                      # simulation + mission
+ros2 run behavior greenhouse_mission                                 # mission only (fresh simulation, no teleop running)
+ros2 run behavior greenhouse_mission --ros-args -p safety_timeout:=10.0
+ros2 topic echo /imu --field orientation                             # IMU heading source
+python3 -m pytest -q src/behavior/test/test_mission.py               # full route on a simulated robot
+```
+
+The route is in `src/behavior/config/mission.yaml` (Gazebo world coordinates); see `README.md` → *Autonomous mission*.
 
 ## 4. Figures for the report
 
@@ -143,6 +156,9 @@ pkill -f gz-sim-main
 - Nothing on `/bumper`: it is only published during a contact; check the `Contact` plugin in `greenhouse.sdf` and `gz topic -l | grep bumper`.
 - Teleop does not react to keys: the terminal running `wasd_teleop` must be focused.
 - Nothing on `/scan`: check that `lidar.xacro` is included in `greenhouse_bot.urdf.xacro` and that it shows in `gz topic -l`.
+- Mission fails with `odom is not at its origin`: the robot already moved; restart `sim.launch.py`.
+- Mission fails with `another node is publishing cmd_vel_raw`: close `wasd_teleop` (or any other driver).
+- Mission fails with `no odom / imu / safety data`: Gazebo did not start (check `create` keeps printing `Requesting list of world names`); a VPN such as Cloudflare WARP can block Gazebo transport.
 - Nothing on `/color_detector/*`: check that `/camera/image_raw` is publishing (`ros2 topic hz`), then look at the mask inset in `debug_image`.
 
 ## 7. Git

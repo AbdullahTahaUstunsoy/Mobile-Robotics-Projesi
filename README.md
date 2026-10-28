@@ -1,20 +1,21 @@
 # Mobile-Robotics-Projesi
 
-A Gazebo Sim greenhouse world for ripe fruit (apple) detection and a 4-wheel robot driven with the keyboard (WASD). The robot currently has an RGB camera (red/green apple and RED/GREEN checkpoint detection), a 2D lidar (obstacle detection) and a front bumper (contact sensor) behind a safety filter; the other sensors are being added.
+A Gazebo Sim greenhouse world for ripe fruit (apple) detection and a 4-wheel robot, driven with the keyboard (WASD) or by an autonomous mission that drives both aisles, scans the wall checkpoints and parks back at the start. The robot has an RGB camera (red/green apple and RED/GREEN checkpoint detection), a 2D lidar (obstacle detection), a front bumper (contact sensor) behind a safety filter and an IMU (heading).
 
 ## Packages
 
 | Package | Contents |
 | --- | --- |
 | `bringup` | `sim.launch.py`, `worlds/greenhouse.sdf`, `config/bridge.yaml`, `config/obstacle_detector.yaml`, `config/safety.yaml` |
-| `description` | Robot model (`urdf/greenhouse_bot.urdf.xacro`): 4-wheel skid-steer base, Gazebo DiffDrive plugin, `urdf/camera.xacro`, `urdf/lidar.xacro`, `urdf/bumper.xacro`; RViz config `rviz/greenhouse_bot.rviz` |
-| `behavior` | `wasd_teleop`: teleop node that publishes `/cmd_vel_raw` from the keyboard; `color_detector`: apple and checkpoint detection in the camera image; `obstacle_detector`: obstacle detection in the lidar scan; `safety`: filters `/cmd_vel_raw` into `/cmd_vel` using the bumper and the lidar |
+| `description` | Robot model (`urdf/greenhouse_bot.urdf.xacro`): 4-wheel skid-steer base, Gazebo DiffDrive plugin, `urdf/camera.xacro`, `urdf/lidar.xacro`, `urdf/bumper.xacro`, `urdf/imu.xacro`; RViz config `rviz/greenhouse_bot.rviz` |
+| `behavior` | `wasd_teleop`: teleop node that publishes `/cmd_vel_raw` from the keyboard; `color_detector`: apple and checkpoint detection in the camera image; `obstacle_detector`: obstacle detection in the lidar scan; `safety`: filters `/cmd_vel_raw` into `/cmd_vel` using the bumper and the lidar; `greenhouse_mission`: autonomous mission, route in `config/mission.yaml` |
 
 ## World: `src/bringup/worlds/greenhouse.sdf`
 
 - 3 planter rows (y = 1.4, 0.0, -1.4) with 2 aisles between them
 - 9 fruit on the middle row: 5 red (ripe), 4 green (unripe)
 - An 11 x 5.4 m area enclosed by four walls
+- RED and GREEN X-marked checkpoint panels on the east wall (x = 8.44, y = 1.0 and 0.3), seen from the end of aisle 1
 - A low orange box (0.1 m tall, at x = -1.5, y = 0.65, behind the start pose) for bumper tests: below the lidar scan plane, only the bumper detects it
 - No external models; runs as a single file
 
@@ -92,7 +93,7 @@ Hold the key down; the robot stops when you release it.
 
 RViz shows the robot model, TF, odometry, the raw camera image, the color detection image, the lidar scan and the detected obstacles.
 
-Launch arguments: `headless:=true` (no Gazebo GUI), `rviz:=false` (do not open RViz), `x`, `y`, `yaw` (start pose, default aisle 1: `-0.5`, `0.65`, `0.0`), `world` (a different world file).
+Launch arguments: `headless:=true` (no Gazebo GUI), `rviz:=false` (do not open RViz), `mission:=true` (run the [autonomous mission](#autonomous-mission)), `x`, `y`, `yaw` (start pose, default aisle 1: `-0.5`, `0.65`, `0.0`), `world` (a different world file).
 
 To open only the world: `gz sim -r src/bringup/worlds/greenhouse.sdf`
 
@@ -157,7 +158,7 @@ A thin bumper plate (`urdf/bumper.xacro`) covers the chassis front and the front
 ground: below the lidar scan plane, so it catches low obstacles the lidar cannot see. A Gazebo contact sensor
 reports every touch (it needs the `Contact` system plugin at the top of `greenhouse.sdf`).
 
-Teleop (and later navigation) publishes **`/cmd_vel_raw`**; the `safety` node, started by `sim.launch.py`,
+Teleop and the mission publish **`/cmd_vel_raw`**; the `safety` node, started by `sim.launch.py`,
 passes it on to `/cmd_vel` and removes forward motion (`linear.x > 0`) while
 
 - `BUMPER`: the bumper touched something less than `bumper_hold_time` (1 s) ago, or
@@ -170,7 +171,7 @@ To try the bumper, turn around at the start pose and drive into the low orange b
 | Topic | Type | Description |
 | --- | --- | --- |
 | `/bumper` | `ros_gz_interfaces/Contacts` | Bumper contacts, published only while something touches it |
-| `/cmd_vel_raw` | `geometry_msgs/Twist` | Unfiltered commands (teleop, navigation) |
+| `/cmd_vel_raw` | `geometry_msgs/Twist` | Unfiltered commands (teleop, mission) |
 | `/cmd_vel` | `geometry_msgs/Twist` | Safe command sent to the robot |
 | `/safety/stop` | `std_msgs/Bool` | `True` while forward motion is blocked |
 
@@ -178,3 +179,65 @@ To try the bumper, turn around at the start pose and drive into the low orange b
 ros2 topic echo /safety/stop
 ros2 topic echo /bumper --field contacts
 ~~~
+
+## IMU
+
+An IMU (`urdf/imu.xacro`) sits on the chassis (`imu_link`, 30 Hz, no noise model) and is bridged to `/imu`
+(`sensor_msgs/Imu`). The mission uses it for the heading: heading = odom yaw at the mission start + the IMU yaw change since then.
+
+~~~bash
+ros2 topic echo /imu --field orientation
+~~~
+
+## Autonomous mission
+
+The `greenhouse_mission` node drives the whole greenhouse on its own:
+
+1. Aisle 1 eastwards (y = 0.65), apples on the middle row seen on the right
+2. Turn north at the aisle end, stand still 5 s and scan the RED / GREEN checkpoints on the east wall
+3. Cross to aisle 2 (y = -0.65) and drive it westwards, apples on the other side of the middle row
+4. Go around the end of the middle row back to the start pose and park facing +x
+
+~~~bash
+ros2 launch bringup sim.launch.py mission:=true     # start the simulation and the mission together
+# or, with the simulation already running:
+ros2 run behavior greenhouse_mission
+~~~
+
+The log shows `STAGE n/13 START` / `DONE` for each stage, the apples and checkpoints seen in it and finally
+`MISSION COMPLETE`. The node exits with code 0 when the mission is complete and 1 when it fails, with the reason in the log
+(`MISSION FAILED: ...`).
+
+- **Fresh simulation needed:** odom must be at its origin, so restart `sim.launch.py` before running the mission again.
+- **Nothing else may drive:** the mission refuses to start while another node (e.g. `wasd_teleop`) publishes `/cmd_vel_raw`.
+- **Safety:** commands go through the safety filter. While `/safety/stop` is `True`, driving stages wait and turning stages
+  keep turning; the mission fails if the stop lasts longer than `safety_timeout` (30 s).
+- **Aisle guard:** an aisle stage fails if the robot drifts too far from the aisle center line (`max_lateral`).
+
+The route is in `src/behavior/config/mission.yaml`, in **Gazebo world coordinates**. The node converts them to odom with the
+spawn pose (`spawn_x`, `spawn_y`, `spawn_yaw` parameters; `sim.launch.py` passes its `x`, `y`, `yaw`), so a different
+start pose does not shift the targets. Stage types:
+
+| Type | Does | Keys |
+| --- | --- | --- |
+| `follow_line` | drive along a line, steering back to it | `from`, `to`, `max_lateral` |
+| `drive_to` | head straight for a point | `to` |
+| `turn_to` | turn in place to a world yaw | `yaw_deg` |
+| `wait` | stand still | `duration` |
+
+Every stage also takes `name`, `timeout`, `watch` (color detector labels to report, e.g. `[red_apple, green_apple]`) and
+optional `drive` / `turn` tuning (speeds, gains, tolerances; see the comment at the top of `mission.yaml`).
+The controllers (`behavior/navigation.py`) and the state machine (`behavior/mission.py`) have no ROS dependency; the
+unit tests run the full route on a simulated robot:
+
+~~~bash
+python3 -m pytest -q src/behavior/test
+~~~
+
+| Node parameter | Default | Description |
+| --- | --- | --- |
+| `mission_file` | `share/behavior/config/mission.yaml` | Route file |
+| `spawn_x`, `spawn_y`, `spawn_yaw` | `-0.5`, `0.65`, `0.0` | World pose of the odom origin |
+| `sensor_wait` | `60` s | Fail if odom / IMU / safety data do not arrive in time |
+| `sensor_timeout` | `5` s | Fail if that data stops arriving |
+| `safety_timeout` | `30` s | Fail if a safety stop lasts longer |
