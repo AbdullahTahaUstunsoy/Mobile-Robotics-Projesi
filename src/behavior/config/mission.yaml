@@ -1,0 +1,77 @@
+# Greenhouse mission route, in Gazebo world coordinates (metres, degrees).
+# Aisle 1 runs along y = 0.65, aisle 2 along y = -0.65; the checkpoint panels are on the east wall.
+# Optional per stage: timeout (s), watch (color detector labels),
+#   drive: {speed, slow_speed, slow_distance, goal_tolerance, turn_in_place_deg}
+#   turn:  {gain, min_speed, max_speed, deadband_deg}
+
+start_check:
+  xy_tolerance: 0.15
+  yaw_tolerance_deg: 10.0
+
+stages:
+  - name: first_aisle
+    type: follow_line
+    from: [-0.5, 0.65]
+    to: [6.8, 0.65]
+    max_lateral: 0.12
+    watch: [red_apple, green_apple]
+    timeout: 900
+    drive: {turn_in_place_deg: 12}
+    turn: {gain: 1.5, min_speed: 0.10, max_speed: 0.25, deadband_deg: 1}
+
+  - name: face_checkpoints
+    type: turn_to
+    yaw_deg: 90
+    timeout: 120
+    turn: {max_speed: 0.45}
+
+  - name: scan_checkpoints
+    type: wait
+    duration: 5.0
+    watch: [red_checkpoint, green_checkpoint]
+
+  - name: face_south
+    type: turn_to
+    yaw_deg: -90
+
+  - name: cross_to_second_aisle
+    type: drive_to
+    to: [6.8, -0.65]
+    turn: {max_speed: 0.30}
+
+  - name: face_west
+    type: turn_to
+    yaw_deg: 180
+
+  - name: second_aisle
+    type: follow_line
+    from: [6.8, -0.65]
+    to: [-0.7, -0.65]
+    max_lateral: 0.25
+    watch: [red_apple, green_apple]
+    timeout: 900
+    drive: {turn_in_place_deg: 12}
+    turn: {max_speed: 0.30}
+
+  - name: west_open_area
+    type: drive_to
+    to: [-1.05, -0.65]
+    drive: {turn_in_place_deg: 8}
+
+  - {name: pause_1, type: wait, duration: 1.0}
+
+  - name: north_crossing
+    type: drive_to
+    to: [-1.05, 0.65]
+    drive: {turn_in_place_deg: 8}
+
+  - {name: pause_2, type: wait, duration: 1.0}
+
+  - name: back_to_start
+    type: drive_to
+    to: [-0.5, 0.65]
+    drive: {turn_in_place_deg: 8}
+
+  - name: park
+    type: turn_to
+    yaw_deg: 0

@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- IMU physical link -->
+  <link name="imu_link">
+    <visual>
+      <geometry>
+        <box size="0.04 0.04 0.02"/>
+      </geometry>
+      <material name="imu_blue">
+        <color rgba="0.1 0.3 0.9 1.0"/>
+      </material>
+    </visual>
+
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.02"/>
+      <inertia
+        ixx="0.00001" ixy="0" ixz="0"
+        iyy="0.00001" iyz="0"
+        izz="0.00001"/>
+    </inertial>
+  </link>
+
+  <!-- Attach IMU to robot body -->
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="imu_link"/>
+    <origin xyz="0 0 0.16" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Gazebo IMU sensor -->
+  <gazebo reference="imu_link">
+    <sensor name="greenhouse_imu" type="imu">
+      <always_on>true</always_on>
+      <update_rate>30</update_rate>
+      <topic>/imu</topic>
+      <gz_frame_id>imu_link</gz_frame_id>
+    </sensor>
+  </gazebo>
+
+</robot>

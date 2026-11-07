@@ -3,6 +3,7 @@ and the safety filter, and open RViz.
 
 Drive it with WASD teleop in a second terminal:
     ros2 run behavior wasd_teleop
+or run the autonomous greenhouse mission with mission:=true (or later: ros2 run behavior greenhouse_mission).
 """
 
 import os
@@ -15,6 +16,7 @@ from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description():
@@ -25,6 +27,7 @@ def generate_launch_description():
     world = LaunchConfiguration("world")
     headless = LaunchConfiguration("headless")
     rviz = LaunchConfiguration("rviz")
+    mission = LaunchConfiguration("mission")
     x = LaunchConfiguration("x")
     y = LaunchConfiguration("y")
     yaw = LaunchConfiguration("yaw")
@@ -128,6 +131,22 @@ def generate_launch_description():
         output="screen",
     )
 
+    # Mission targets are in world coordinates; it needs the spawn pose to convert them to odom
+    mission_node = Node(
+        package="behavior",
+        executable="greenhouse_mission",
+        parameters=[
+            {
+                # Typed as float so that e.g. x:=1 is not passed as an integer
+                "spawn_x": ParameterValue(x, value_type=float),
+                "spawn_y": ParameterValue(y, value_type=float),
+                "spawn_yaw": ParameterValue(yaw, value_type=float),
+            }
+        ],
+        condition=IfCondition(mission),
+        output="screen",
+    )
+
     return LaunchDescription(
         [
             DeclareLaunchArgument(
@@ -139,6 +158,11 @@ def generate_launch_description():
                 "headless", default_value="false", description="Run Gazebo server only (no GUI)"
             ),
             DeclareLaunchArgument("rviz", default_value="true", description="Open RViz"),
+            DeclareLaunchArgument(
+                "mission",
+                default_value="false",
+                description="Run the autonomous greenhouse mission",
+            ),
             # Start in aisle 1, heading +x, with the middle row on the right
             DeclareLaunchArgument("x", default_value="-0.5"),
             DeclareLaunchArgument("y", default_value="0.65"),
@@ -151,5 +175,6 @@ def generate_launch_description():
             obstacle_detector,
             safety,
             rviz_node,
+            mission_node,
         ]
     )
