@@ -178,3 +178,52 @@ To try the bumper, turn around at the start pose and drive into the low orange b
 ros2 topic echo /safety/stop
 ros2 topic echo /bumper --field contacts
 ~~~
+
+
+## IMU-Based Autonomous Navigation
+
+An IMU sensor was integrated into the robot using URDF/Xacro and Gazebo. Sensor data is transferred to ROS 2 through `ros_gz_bridge` via the `/imu` topic.
+
+### Navigation Features
+
+- IMU-based heading tracking using quaternion-to-yaw conversion.
+- Proportional control for accurate turning.
+- Waypoint navigation using odometry.
+- Autonomous aisle following with lateral drift correction.
+- Automatic speed reduction near target positions.
+- Integration with the existing LiDAR and bumper safety system.
+
+### Autonomous Greenhouse Mission
+
+The robot follows a 13-stage autonomous mission defined in `src/behavior/config/mission.yaml`.
+
+The mission includes:
+- Navigating through the first greenhouse aisle and detecting apples.
+- Turning toward the checkpoint panels and scanning them.
+- Moving to the second aisle and navigating back.
+- Returning to the starting position and parking.
+
+The mission is controlled by a single state machine implemented in `mission.py` and `mission_node.py`.
+
+### Red and Green Checkpoints
+
+Two checkpoint panels were added to the Gazebo greenhouse world in `greenhouse.sdf`.
+
+- Red and green panels with white X markings.
+- Positioned on the east wall for camera detection.
+- Detection results monitored during the autonomous mission.
+
+### Running Autonomous Navigation
+
+```bash
+ros2 launch bringup sim.launch.py mission:=true rviz:=false
+```
+
+### Testing and Results
+
+- 20 navigation and mission tests passed.
+- GitHub Actions lint and build-and-test checks passed.
+- All 13 mission stages completed successfully in Gazebo.
+- Both red and green checkpoints were detected.
+- Final position error: approximately 0.05 m.
+- Final heading error: approximately 3 degrees.
